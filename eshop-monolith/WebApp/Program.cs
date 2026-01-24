@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using WebApp.Components;
 using WebApp.Data;
 
@@ -6,8 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddDbContext<EShopDbContext>(options =>
-    options.UseInMemoryDatabase("EShopDB"));
+builder.AddNpgsqlDbContext<EShopDbContext>(connectionName: "eshopdb");
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
