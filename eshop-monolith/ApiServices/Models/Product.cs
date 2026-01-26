@@ -1,4 +1,4 @@
-﻿namespace WebApp.Models;
+﻿namespace ApiServices.Models;
 
 public class Product
 {

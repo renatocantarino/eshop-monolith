@@ -1,6 +1,6 @@
-﻿namespace WebApp.Models;
+﻿namespace AppShared.Dtos;
 
-public class ShoppingCartItem
+public class ShoppingCartItemDTO
 {
     public int Id { get; set; }
     public int ShoppingCartId { get; set; }
@@ -10,5 +10,6 @@ public class ShoppingCartItem
 
     // will comes from Catalog module
     public decimal Price { get; set; } = default!;
+
     public string ProductName { get; set; } = default!;
 }

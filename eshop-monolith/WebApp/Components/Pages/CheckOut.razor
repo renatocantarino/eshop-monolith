@@ -1,5 +1,5 @@
 ﻿@page "/checkout"  
-@inject EShopDbContext EShopDbContext  
+@inject ApiServiceClient ApiServiceClient
 @inject NavigationManager NavigationManager  
 @rendermode InteractiveServer  
 
@@ -84,24 +84,21 @@ else
 }
 
 @code {
-   private ShoppingCart basket = new();
-   private Order Order = new();  
+   private ShoppingCartDTO basket = new();
+   private OrderDTO Order = new();  
    private bool isCheckoutCompleted = false;
 
    protected override async Task OnInitializedAsync()
    {  
-        basket = await EShopDbContext.LoadUserBasket();
+        basket = await ApiServiceClient.LoadUserBasket();
    }
 
    private async Task PerformCheckout()  
-   {        
-       Order.UserName = basket.UserName;
-       Order.TotalPrice = basket.TotalPrice;
+   {
+        Order.UserName = basket.UserName;
+        Order.TotalPrice = basket.TotalPrice;
 
-       EShopDbContext.Orders.Add(Order);
-       EShopDbContext.ShoppingCarts.Remove(basket);
-
-       await EShopDbContext.SaveChangesAsync();
+       await ApiServiceClient.CheckoutBasket(Order);
 
        // Mark checkout as completed
        isCheckoutCompleted = true;

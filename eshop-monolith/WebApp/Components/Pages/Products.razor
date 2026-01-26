@@ -1,5 +1,5 @@
 ﻿@page "/products"
-@inject EShopDbContext EShopDbContext
+@inject ApiServiceClient ApiServiceClient
 @attribute [StreamRendering(true)]
 @rendermode InteractiveServer
 
@@ -53,52 +53,40 @@ else
 }
 
 @code {
-    private List<Product>? products;
+    private IReadOnlyCollection<ProductDTO>? products;
     private bool showNotification;
 
     protected override async Task OnInitializedAsync()
     {
-        products = await EShopDbContext.Products.ToListAsync();
+        products = await ApiServiceClient.GetProducts();
     }
 
-    private async Task AddToCart(Product product)  
+    private async Task AddToCart(ProductDTO product)
     {  
-        var basket = await EShopDbContext.LoadUserBasket();
-
-        // Check if the item already exists in the basket  
-        var existingItem = basket.Items.FirstOrDefault(item => item.ProductId == product.Id);  
-        if (existingItem != null)  
-        {  
-            // If the item exists, increase the quantity  
-            existingItem.Quantity++;  
-        }  
-        else  
-        {  
-            // If the item does not exist, add it to the basket  
-            basket.Items.Add(new ShoppingCartItem  
-                {  
-                    ProductId = product.Id,  
-                    ProductName = product.Name,  
-                    Price = product.Price,  
-                    Color = "Blue",  
-                    Quantity = 1  
-                });  
-        }  
-
-        // Check if the basket is a new entity or an existing one  
-        if (basket.Id == 0)  
-        {  
-            // New basket, add it to the context  
-            EShopDbContext.ShoppingCarts.Add(basket);  
-        }  
-        else  
-        {  
-            // Existing basket, update it in the context  
-            EShopDbContext.ShoppingCarts.Update(basket);  
+        var basket = await ApiServiceClient.LoadUserBasket();
+        var existingItem = basket.Items.SingleOrDefault(item => item.ProductId == product.Id);
+        
+        if (existingItem != null)
+        {
+            // If the item exists, increase the quantity
+            existingItem.Quantity++;
         }
+        else
+        {
+            // If the item does not exist, add it to the basket
+            basket.Items.Add(new ShoppingCartItemDTO
+            {
+                ProductId = product.Id,
+                ProductName = product.Name,
+                Price = product.Price,
+                Color = "Blue",
+                Quantity = 1
+            });
+        }
+      
 
-        await EShopDbContext.SaveChangesAsync();              
-
+        await ApiServiceClient.UpdateBasket(basket);
+    
         // Show notification  
         showNotification = true;  
         StateHasChanged();  

@@ -1,11 +1,14 @@
+using WebApp.ApiClients;
 using WebApp.Components;
-using WebApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddNpgsqlDbContext<EShopDbContext>(connectionName: "eshopdb");
+builder.Services.AddHttpClient<ApiServiceClient>(client =>
+{
+    client.BaseAddress = new("https+http://apiservice");
+});
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -25,13 +28,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-
 app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-app.UseMigration();
 
 app.Run();

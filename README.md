@@ -1,95 +1,76 @@
-# eShop Monolith
+# 🛍️ eShop Monolith
 
-## 📋 Visão Geral do Projeto
+Uma arquitetura de e-commerce monolítica desacoplada, demonstrando os princípios de separação de camadas (3-tier) e abordagem API-First para criar aplicações escaláveis e mantíveis.
 
-**eShop Monolith** é uma aplicação de e-commerce construída em **.NET 9** utilizando **Blazor Server** como framework web. O projeto atualmente segue uma arquitetura monolítica e será gradualmente refatorado para aderir às melhores práticas de desenvolvimento, mantendo escalabilidade, manutenibilidade e qualidade de código.
+## 📋 O Problema: Acoplamento Forte entre UI, Lógica e Dados
 
-### Objetivo
+Quando o núcleo de negócios e o banco de dados estão fortemente acoplados à interface de usuário, surgem diversos problemas críticos:
 
-Transformar um monolito funcional em uma arquitetura bem estruturada, aplicando padrões de design, princípios SOLID, camadas de responsabilidade clara e preparação para possível evolução futura.
+### Problemas de Arquitetura
 
----
+- **Efeito Dominó**: Uma mudança no formato de uma data no banco de dados quebra a interface, pois ela esperava o formato antigo
+- **Dificuldade de Manutenção**: Atualizar o design exige modificar códigos complexos de lógica, tornando o processo lento e custoso
+- **Impossibilidade de Escalar**: Criar uma versão mobile requer refazer quase tudo, pois a lógica está "presa" na interface web
 
-## 🏗️ Arquitetura Atual
+### Impacto na Experiência do Usuário (UX)
 
-### Estrutura do Projeto
+- **Performance Lenta**: UIs acopladas fazem requisições pesadas e diretas, causando travamentos quando o banco demora
+- **Feedback Pobre**: Dependência de respostas síncronas deixa o usuário vendo telas brancas e carregamentos infinitos
+- **Inconsistência Visual**: Mudanças não se propagam uniformemente, criando uma experiência confusa e amadora
 
-```
-eshop-monolith/
-├── AppHost/                 # Orchestrador da aplicação (Aspire)
-├── ServiceDefaults/         # Configurações e extensões compartilhadas
-└── WebApp/
-    ├── Components/          # Componentes Blazor
-    │   ├── Layout/         # Layouts da aplicação
-    │   └── Pages/          # Páginas (rotas)
-    ├── Data/               # Camada de Dados (DbContext, Extensões)
-    ├── Models/             # Entidades de Domínio
-    ├── Properties/         # Configurações do projeto
-    ├── wwwroot/            # Ativos estáticos (CSS, JS, imagens)
-    └── Program.cs          # Configuração da aplicação
-```
+## ✅ Solução: Arquitetura Desacoplada com 3-Tier
 
-### Stack Tecnológico
+### Padrão de Desacoplamento
 
-- **Framework**: .NET 9
-- **UI**: Blazor Server (Razor Components)
-- **ORM**: Entity Framework Core 9.0
-- **Banco de Dados**: In-Memory (atualmente)
-- **Padrão de Hospedagem**: .NET Aspire
+A arquitetura de três camadas (3-tier) estabelece o padrão fundamental para mitigar o acoplamento sistêmico:
 
----
+- **Segregação de Responsabilidades**: A aplicação é dividida em camadas de Apresentação, Lógica de Negócios e Dados
+- **Independência de Componentes**: Cada camada opera de forma independente e especializada
+- **API-First**: A API atua como peça central de inteligência, orquestrando requisições de múltiplos clientes (React, Mobile, etc.) através de contratos bem definidos
 
-## 🎯 Funcionalidades Principais
+### 🎯 Design Final: Antes e Depois
 
-### Entities (Domínio)
+#### ❌ Versão Inicial (Fortemente Acoplada)
 
-1. **Product** - Catálogo de produtos
-   - Id, Name, Description, Price, ImageUrl
+![versao inicial](images/01.png)
 
-2. **ShoppingCart** - Carrinho de compras por usuário
-   - Id, UserName, Items, TotalPrice
+*Problema: Todas as camadas são fortemente acopladas, dificultando manutenção e escalabilidade*
 
-3. **ShoppingCartItem** - Itens do carrinho
-   - Produto, Quantidade, Preço
+#### ✅ Versão com Padrão Aplicado (Desacoplada)
 
-4. **Order** - Pedidos finalizados
-   - Informações de pedido e histórico
+![versao apos aplicação do padrao](images/02.png)
 
-### Fluxo Principal
+*Solução: Camadas independentes com API como intermediária, permitindo múltiplos clientes e fácil manutenção*
 
-- 📦 Visualizar produtos
-- 🛒 Adicionar/remover produtos do carrinho
-- 💳 Proceder ao checkout
-- ✅ Confirmar pedido
-- 📋 Visualizar histórico de pedidos
+#### Principais Mudanças
 
----
+| Aspecto | Antes | Depois |
+|--------|-------|--------|
+| **Acoplamento** | UI ↔ Lógica ↔ Dados | UI ↔ API ↔ Dados |
+| **Clientes** | Apenas Web | Web, Mobile, Desktop, Terceiros |
+| **Manutenção** | Difícil e Arriscada | Simples e Segura |
+| **Testabilidade** | Baixa | Alta |
+| **Escalabilidade** | Limitada | Ilimitada |
 
-## 🚀 Getting Started
 
-### Pré-requisitos
 
-- .NET 9 SDK instalado
-- Visual Studio 2022 ou VS Code com extensões C#
 
-### Instalação e Execução
+### Layer vs Tier
 
-```bash
-# Clone o repositório
-git clone <repo-url>
-cd eshop-app/eshop-monolith
+| Conceito | Descrição |
+|----------|-----------|
+| **Layer** | Organização lógica da aplicação (separação de responsabilidades) |
+| **Tier** | Organização física da aplicação (onde os componentes executam) |
 
-# Restaurar dependências
-dotnet restore
+![Layers - Organização Lógica](images/image.png)
 
-# Compilar a solução
-dotnet build
+![Tiers - Organização Física](images/image-1.png)
 
-# Executar a aplicação
-dotnet run --project AppHost
-```
 
-A aplicação estará disponível em: `https://localhost:5000`
 
----
 
+
+
+
+
+**Referência**: [Layer vs Tier na Prática - Dennis Rojas](https://www.linkedin.com/pulse/layer-vs-tier-na-pr%C3%A1tica-dennis-rojas-k95hf/)

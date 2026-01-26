@@ -1,14 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebApp.Models;
+using ApiServices.Models;
 
-namespace WebApp.Data;
+namespace ApiServices.Data;
 
 public class EShopDbContext : DbContext
 {
-    public EShopDbContext(DbContextOptions<EShopDbContext> options) 
+    public EShopDbContext(DbContextOptions<EShopDbContext> options)
         : base(options)
     {
     }
+
     public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; } = default!;
     public DbSet<Product> Products { get; set; } = default!;
     public DbSet<ShoppingCart> ShoppingCarts { get; set; } = default!;
