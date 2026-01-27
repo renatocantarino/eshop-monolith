@@ -3,7 +3,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Orders.Migrations
+namespace Ordering.Migrations
 {
     /// <inheritdoc />
     public partial class InitialOrderMigration : Migration
@@ -12,11 +12,11 @@ namespace Orders.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "orders");
+                name: "ordering");
 
             migrationBuilder.CreateTable(
                 name: "Orders",
-                schema: "orders",
+                schema: "ordering",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
@@ -39,7 +39,7 @@ namespace Orders.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Orders",
-                schema: "orders");
+                schema: "ordering");
         }
     }
 }

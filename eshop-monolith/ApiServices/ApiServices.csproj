@@ -19,7 +19,7 @@
     <ProjectReference Include="..\AspireApp\AspireApp.ServiceDefaults\AspireApp.ServiceDefaults.csproj" />
     <ProjectReference Include="..\basket\Basket.csproj" />
     <ProjectReference Include="..\catalog\Catalog.csproj" />
-    <ProjectReference Include="..\Order\Orders.csproj" />
+    <ProjectReference Include="..\Ordering\Ordering.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,32 +1,31 @@
-using Microsoft.EntityFrameworkCore;
-using Orders.Data;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace Orders.Services;
+namespace Ordering.Services;
 
 public class OrderServices(OrderDbContext dbContext)
 {
-    public async Task<List<Orders.Model.Order>> GetAllAsync()
+    public async Task<List<Order>> GetAllAsync()
     {
         return await dbContext.Orders.ToListAsync();
     }
 
-    public async Task<Orders.Model.Order?> GetByIdAsync(int id)
+    public async Task<Order?> GetByIdAsync(int id)
     {
         return await dbContext.Orders.FindAsync(id);
     }
 
-    public async Task<List<Orders.Model.Order>> GetByUserNameAsync(string userName)
+    public async Task<List<Order>> GetByUserNameAsync(string userName)
     {
         return await dbContext.Orders.Where(o => o.UserName == userName).ToListAsync();
     }
 
-    public async Task CreateAsync(Orders.Model.Order order)
+    public async Task CreateAsync(Order order)
     {
         await dbContext.Orders.AddAsync(order);
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Orders.Model.Order toUpdate, Orders.Model.Order input)
+    public async Task UpdateAsync(Order toUpdate, Order input)
     {
         toUpdate.UserName = input.UserName;
         toUpdate.TotalPrice = input.TotalPrice;
@@ -39,7 +38,7 @@ public class OrderServices(OrderDbContext dbContext)
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Orders.Model.Order order)
+    public async Task DeleteAsync(Order order)
     {
         dbContext.Orders.Remove(order);
         await dbContext.SaveChangesAsync();

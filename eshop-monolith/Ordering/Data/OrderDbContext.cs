@@ -1,14 +1,14 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
-namespace Orders.Data;
+namespace Ordering.Data;
 
 public class OrderDbContext(DbContextOptions<OrderDbContext> options) : DbContext(options)
 {
-    public DbSet<Model.Order> Orders { get; set; }
+    public DbSet<Order> Orders { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
-        builder.HasDefaultSchema("orders");
+        builder.HasDefaultSchema("ordering");
         base.OnModelCreating(builder);
     }
 }

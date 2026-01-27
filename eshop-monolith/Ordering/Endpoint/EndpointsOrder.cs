@@ -1,9 +1,9 @@
-using AppShared.Dtos;
+﻿using AppShared.Dtos;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Orders.Endpoints;
+namespace Ordering.Endpoint;
 
 public static class EndpointsOrder
 {
@@ -76,7 +76,7 @@ public static class EndpointsOrder
 dotnet ef migrations add InitialBasketMigration -p basket -s ApiServices --context BasketDbContext
 
 # Order
-dotnet ef migrations add InitialOrderMigration -p order -s ApiServices --context OrderDbContext
+dotnet ef migrations add InitialOrderMigration -p Ordering -s ApiServices --context OrderDbContext
 
 # Catalog
 dotnet ef migrations add InitialCatalogMigration -p catalog -s ApiServices --context CatalogDbContext

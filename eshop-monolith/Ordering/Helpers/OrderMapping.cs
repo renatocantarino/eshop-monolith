@@ -1,10 +1,10 @@
-using AppShared.Dtos;
+﻿using AppShared.Dtos;
 
-namespace Orders.Helpers;
+namespace Ordering.Helpers;
 
 public static class OrderMapping
 {
-    public static OrderDTO ToDTO(this Orders.Model.Order order)
+    public static OrderDTO ToDTO(this Order order)
     {
         return new OrderDTO
         {
@@ -18,9 +18,9 @@ public static class OrderMapping
         };
     }
 
-    public static Orders.Model.Order ToModel(this OrderDTO orderDTO)
+    public static Order ToModel(this OrderDTO orderDTO)
     {
-        return new Orders.Model.Order
+        return new Order
         {
             Id = orderDTO.Id,
             UserName = orderDTO.UserName,
