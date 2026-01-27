@@ -6,7 +6,7 @@ public class ApiServiceClient(HttpClient httpClient)
 {
     public async Task<IReadOnlyCollection<ProductDTO>> GetProducts(CancellationToken ct = default)
     {
-        var response = await httpClient.GetFromJsonAsync<List<ProductDTO>>($"/apiservice/products", ct);
+        var response = await httpClient.GetFromJsonAsync<List<ProductDTO>>($"/products", ct);
         return response?.AsReadOnly() ?? (IReadOnlyCollection<ProductDTO>)[];
     }
 

@@ -1,26 +1,19 @@
-using ApiServices.Data;
-using ApiServices.Endpoints;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-builder.Services.AddOpenApi();
 
-builder.AddNpgsqlDbContext<EShopDbContext>(connectionName: "EshopDB");
+builder.AddCatalogModule(builder.Configuration)
+       .AddBasketModule(builder.Configuration)
+       .AddOrderModule(builder.Configuration);
 
 var app = builder.Build();
-
-//// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-//    app.MapOpenApi();
-//}
 
 app.MapDefaultEndpoints();
 app.UseHttpsRedirection();
 
-app.UseMigration();
-
-app.MapApiServiceEndpoints();
+app
+    .UseCatalogModule()
+    .UseBasketModule()
+    .UseOrderModule();
 
 app.Run();
