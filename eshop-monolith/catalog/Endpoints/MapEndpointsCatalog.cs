@@ -4,6 +4,8 @@ using Catalog.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Catalog.Endpoints;
 
@@ -20,7 +22,8 @@ public static class EndpointsCatalog
             return Results.Ok(dtos);
         })
    .WithName("GetAllProducts")
-   .Produces<List<ProductDTO>>(StatusCodes.Status200OK);
+   .Produces<List<ProductDTO>>(StatusCodes.Status200OK)
+   .CacheOutput(x => x.Tag("products"));
 
         group.MapGet("/{id}", async (int id, CatalogServices services) =>
         {
@@ -28,19 +31,21 @@ public static class EndpointsCatalog
             return product is not null ? Results.Ok(product.ToDTO()) : Results.NotFound();
         })
      .WithName("GetProductById")
-     .Produces<ProductDTO>(StatusCodes.Status200OK);
+     .Produces<ProductDTO>(StatusCodes.Status200OK)
+     .CacheOutput(x => x.Tag("products"));
 
-        app.MapPost("/", async (ProductDTO productDTO, CatalogServices services) =>
+        group.MapPost("/", async (ProductDTO productDTO, CatalogServices services, IOutputCacheStore cache, CancellationToken ct) =>
         {
             var model = productDTO.ToModel();
 
             await services.CreateAsync(model);
+            await cache.EvictByTagAsync("products", ct);
             return Results.Created($"/products/{model.Id}", model.ToDTO());
         })
        .WithName("CreateProduct")
        .Produces<ProductDTO>(StatusCodes.Status201Created);
 
-        app.MapPut("/{id}", async (int id, ProductDTO updatedProductDTO, CatalogServices services) =>
+        group.MapPut("/{id}", async (int id, ProductDTO updatedProductDTO, CatalogServices services, IOutputCacheStore cache, CancellationToken ct) =>
         {
             var persited = await services.GetByIdAsync(id);
             if (persited is null) return Results.NotFound();
@@ -48,18 +53,20 @@ public static class EndpointsCatalog
             var updatedProduct = updatedProductDTO.ToModel();
 
             await services.UpdateAsync(persited, updatedProduct);
+            await cache.EvictByTagAsync("products", ct);
 
             return Results.NoContent();
         })
         .WithName("UpdateProduct")
         .Produces(StatusCodes.Status204NoContent);
 
-        app.MapDelete("/{id}", async (int id, CatalogServices services) =>
+        group.MapDelete("/{id}", async (int id, CatalogServices services, IOutputCacheStore cache, CancellationToken ct) =>
         {
             var product = await services.GetByIdAsync(id);
             if (product is null) return Results.NotFound();
 
             await services.DeleteAsync(product);
+            await cache.EvictByTagAsync("products", ct);
             return Results.NoContent();
         })
      .WithName("DeleteProduct")

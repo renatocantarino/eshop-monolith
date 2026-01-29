@@ -12,6 +12,7 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>	
+     <PackageReference Include="Aspire.StackExchange.Redis.OutputCaching" Version="13.1.0" />
   </ItemGroup>
 
   <ItemGroup>
