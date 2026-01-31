@@ -6,31 +6,39 @@ var postgres = builder
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
-var eshopDb = postgres.AddDatabase("EshopDB");
+var catalogDB = postgres.AddDatabase("CatalogDB");
+var orderDb = postgres.AddDatabase("OrderDB");
 
-var redis = builder
-        .AddRedis("appcache")
+var cache = builder
+        .AddRedis("cache")
         .WithRedisInsight()
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
-// Projects
-var apiService = builder
-        .AddProject<Projects.ApiServices>("apiservice")
-        .WithReplicas(3)
-        .WithReference(eshopDb)
-        .WaitFor(eshopDb);
+var catalog = builder.AddProject<Projects.CatalogApi>("catalog")
+        .WithReference(catalogDB)
+        .WaitFor(catalogDB);
+
+var basket = builder
+        .AddProject<Projects.BasketApi>("basket")
+        .WithReference(cache)
+        .WaitFor(cache);
+
+var ordering = builder
+        .AddProject<Projects.OrderingApi>("ordering")
+        .WithReference(orderDb)
+        .WaitFor(orderDb);
 
 var webapp = builder
         .AddProject<Projects.WebApp>("webapp")
         .WithExternalHttpEndpoints()
         .WithUrlForEndpoint("https", url => url.DisplayText = "EShop WebApp (HTTPS)")
         .WithUrlForEndpoint("http", url => url.DisplayText = "EShop WebApp (HTTP)")
-        .WithReference(redis)
-        .WaitFor(redis)
-        .WithReference(apiService)
-        .WaitFor(apiService);
+        .WithReference(catalog)
+        .WithReference(basket)
+        .WithReference(ordering)
+        .WaitFor(catalog)
+        .WaitFor(basket)
+        .WaitFor(ordering);
 
 builder.Build().Run();
-
-//docker system prune -a --volumes

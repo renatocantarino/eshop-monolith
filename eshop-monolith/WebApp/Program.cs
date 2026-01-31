@@ -5,11 +5,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddRedisOutputCache("appcache");
-
-builder.Services.AddHttpClient<ApiServiceClient>(client =>
+builder.Services.AddHttpClient<OrderApiHttpClient>(client =>
 {
-    client.BaseAddress = new("https+http://apiservice");
+    client.BaseAddress = new("https+http://ordering");
+});
+
+builder.Services.AddHttpClient<CatalogApiHttpClient>(client =>
+{
+    client.BaseAddress = new("https+http://catalog");
+});
+
+builder.Services.AddHttpClient<BasketApiHttpClient>(client =>
+{
+    client.BaseAddress = new("https+http://basket");
 });
 
 // Add services to the container.
@@ -31,7 +39,6 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAntiforgery();
-app.UseOutputCache();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()

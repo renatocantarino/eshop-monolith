@@ -1,5 +1,5 @@
 ﻿@page "/checkout"  
-@inject ApiServiceClient ApiServiceClient
+@inject BasketApiHttpClient BasketHttpClient
 @inject NavigationManager NavigationManager  
 @rendermode InteractiveServer  
 
@@ -11,28 +11,28 @@
 {
    <div class="row">   
        <div class="col-md-6">       
-           <EditForm method="post" Model="Order" OnValidSubmit="PerformCheckout" FormName="create" Enhance>
+            <EditForm method="post" Model="basketCheckout" OnValidSubmit="PerformCheckout" FormName="create" Enhance>
                <DataAnnotationsValidator />
                <ValidationSummary class="text-danger" role="alert" />
                <div class="mb-3">
                    <label for="firstName" class="form-label">First Name:</label>
-                   <InputText id="firstName" @bind-Value="Order.FirstName" class="form-control" />
-                   <ValidationMessage For="() => Order.FirstName" class="text-danger" />
+                    <InputText id="firstName" @bind-Value="basketCheckout.FirstName" class="form-control" />
+                    <ValidationMessage For="() => basketCheckout.FirstName" class="text-danger" />
                </div>
                <div class="mb-3">
                    <label for="lastName" class="form-label">Last Name:</label>
-                   <InputText id="lastName" @bind-Value="Order.LastName" class="form-control" />
-                   <ValidationMessage For="() => Order.LastName" class="text-danger" />
+                    <InputText id="lastName" @bind-Value="basketCheckout.LastName" class="form-control" />
+                    <ValidationMessage For="() => basketCheckout.LastName" class="text-danger" />
                </div>
                <div class="mb-3">
                    <label for="emailAddress" class="form-label">EmailAddress:</label>
-                   <InputText id="emailAddress" @bind-Value="Order.EmailAddress" class="form-control" />
-                   <ValidationMessage For="() => Order.EmailAddress" class="text-danger" />
+                    <InputText id="emailAddress" @bind-Value="basketCheckout.EmailAddress" class="form-control" />
+                    <ValidationMessage For="() => basketCheckout.EmailAddress" class="text-danger" />
                </div>
                <div class="mb-3">
                    <label for="addressLine" class="form-label">AddressLine:</label>
-                   <InputText id="addressLine" @bind-Value="Order.AddressLine" class="form-control" />
-                   <ValidationMessage For="() => Order.AddressLine" class="text-danger" />
+                    <InputText id="addressLine" @bind-Value="basketCheckout.AddressLine" class="form-control" />
+                    <ValidationMessage For="() => basketCheckout.AddressLine" class="text-danger" />
                </div>
                <button type="submit" class="btn btn-primary">CheckOut</button>
            </EditForm>
@@ -84,21 +84,21 @@ else
 }
 
 @code {
-   private ShoppingCartDTO basket = new();
-   private OrderDTO Order = new();  
+   private ShoppingCartResponse basket = new();
+   private BasketCheckoutResponse basketCheckout = new();  
    private bool isCheckoutCompleted = false;
 
    protected override async Task OnInitializedAsync()
    {  
-        basket = await ApiServiceClient.LoadUserBasket();
+        basket = await BasketHttpClient.LoadUserBasket();
    }
 
    private async Task PerformCheckout()  
    {
-        Order.UserName = basket.UserName;
-        Order.TotalPrice = basket.TotalPrice;
+        basketCheckout.UserName = basket.UserName;
+        basketCheckout.TotalPrice = basket.TotalPrice;
 
-       await ApiServiceClient.CheckoutBasket(Order);
+        await BasketHttpClient.CheckoutBasket(basketCheckout);
 
        // Mark checkout as completed
        isCheckoutCompleted = true;

@@ -1,5 +1,7 @@
 ﻿@page "/products"
-@inject ApiServiceClient ApiServiceClient
+@inject BasketApiHttpClient BasketHttpClient
+@inject CatalogApiHttpClient CatalogHttpClient
+
 @attribute [StreamRendering(true)]
 @rendermode InteractiveServer
 
@@ -53,17 +55,17 @@ else
 }
 
 @code {
-    private IReadOnlyCollection<ProductDTO>? products;
+    private IReadOnlyCollection<ProductResponse>? products;
     private bool showNotification;
 
     protected override async Task OnInitializedAsync()
     {
-        products = await ApiServiceClient.GetProducts();
+        products = await CatalogHttpClient.GetProducts();
     }
 
-    private async Task AddToCart(ProductDTO product)
+    private async Task AddToCart(ProductResponse product)
     {  
-        var basket = await ApiServiceClient.LoadUserBasket();
+        var basket = await BasketHttpClient.LoadUserBasket();
         var existingItem = basket.Items.SingleOrDefault(item => item.ProductId == product.Id);
         
         if (existingItem != null)
@@ -74,7 +76,7 @@ else
         else
         {
             // If the item does not exist, add it to the basket
-            basket.Items.Add(new ShoppingCartItemDTO
+            basket.Items.Add(new ShoppingCartItemResponse
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
@@ -85,7 +87,7 @@ else
         }
       
 
-        await ApiServiceClient.UpdateBasket(basket);
+        await BasketHttpClient.UpdateBasket(basket);
     
         // Show notification  
         showNotification = true;  

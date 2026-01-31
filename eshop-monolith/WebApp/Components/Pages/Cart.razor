@@ -1,5 +1,5 @@
 ﻿@page "/cart"
-@inject ApiServiceClient ApiServiceClient
+@inject BasketApiHttpClient BasketHttpClient
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 
@@ -56,19 +56,19 @@ else
 }
 
 @code {
-    private ShoppingCartDTO basket = new();
+    private ShoppingCartResponse basket = new();
 
 
     protected override async Task OnInitializedAsync()
     {
-        basket = await ApiServiceClient.LoadUserBasket();
+        basket = await BasketHttpClient.LoadUserBasket();
     }
 
-    private async Task RemoveItem(ShoppingCartItemDTO item)
+    private async Task RemoveItem(ShoppingCartItemResponse item)
     {
         basket.Items.Remove(item);
 
-        await ApiServiceClient.UpdateBasket(basket);
+        await BasketHttpClient.UpdateBasket(basket);
     }
 
     private void ContinueShopping()
