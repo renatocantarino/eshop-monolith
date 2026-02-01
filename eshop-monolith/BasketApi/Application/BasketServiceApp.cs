@@ -18,7 +18,7 @@ public interface IBasketServiceApp
     Task DeleteBasket(string userName);
 }
 
-public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderingApiClient) : IBasketServiceApp
+public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderingApiClient, DiscountGrpcService discountGrpc) : IBasketServiceApp
 {
     public async Task<ShoppingCart?> GetBasket(string userName)
     {
@@ -38,12 +38,6 @@ public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderin
 
     public async Task CheckoutBasket(BasketCheckout basketCheckout)
     {
-        // get existing basket with total price
-        // Set totalprice on basketcheckout event message
-        // send basket checkout event to rabbitmq using masstransit
-        // delete the basket
-
-        // get existing basket with total price
         var shoppingCart = await GetBasket(basketCheckout.UserName);
         if (shoppingCart is null)
         {
@@ -52,6 +46,10 @@ public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderin
 
         // Set total price on basket checkout event message
         basketCheckout.TotalPrice = shoppingCart.TotalPrice;
+
+        var desconto = await discountGrpc.GetDiscountAsync(1);
+
+        basketCheckout.TotalPrice -= Math.Round(desconto.Amount * 100, 2);
 
         var order = new OrderResponse
         {

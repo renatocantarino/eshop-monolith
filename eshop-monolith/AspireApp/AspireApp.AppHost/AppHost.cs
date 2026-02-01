@@ -15,19 +15,35 @@ var cache = builder
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
+var mongo = builder
+        .AddMongoDB("mongodb")
+        .WithMongoExpress()
+        .WithDataVolume()
+        .WithLifetime(ContainerLifetime.Persistent);
+
+var mongodb = mongo.AddDatabase("DiscountDB");
+
 var catalog = builder.AddProject<Projects.CatalogApi>("catalog")
         .WithReference(catalogDB)
         .WaitFor(catalogDB);
-
-var basket = builder
-        .AddProject<Projects.BasketApi>("basket")
-        .WithReference(cache)
-        .WaitFor(cache);
 
 var ordering = builder
         .AddProject<Projects.OrderingApi>("ordering")
         .WithReference(orderDb)
         .WaitFor(orderDb);
+
+var discountApi = builder.AddProject<Projects.Discount_Grpc>("discount-grpc")
+         .WithHttpEndpoint(port: 9988, name: "grpc")
+         .WithHttpsEndpoint(port: 9987, name: "grpcx")
+         .WithReference(mongodb)
+         .WaitFor(mongodb);
+
+var basket = builder
+    .AddProject<Projects.BasketApi>("basket")
+    .WithReference(cache)
+    .WithReference(discountApi) // Permite que o Basket encontre a URL do gRPC
+    .WaitFor(cache)
+    .WaitFor(discountApi);
 
 var webapp = builder
         .AddProject<Projects.WebApp>("webapp")

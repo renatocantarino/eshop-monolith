@@ -4,6 +4,7 @@ using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
 using BasketApi.Endpoints;
+using Discount.Grpc.Protos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,11 @@ builder.AddServiceDefaults();
 builder.AddRedisDistributedCache(connectionName: "cache");
 
 // Add application services
+
+builder.Services.AddGrpcClient<DiscountService.DiscountServiceClient>(opt => opt.Address = new Uri("https://localhost:9987"));
+
+// 2. DEPOIS: Registre os seus serviços que dependem do gRPC
+builder.Services.AddScoped<DiscountGrpcService>();
 builder.Services.AddScoped<IBasketServiceApp, BasketServiceApp>();
 
 builder.Services.AddHttpClient<OrderingApiClient>(client =>
