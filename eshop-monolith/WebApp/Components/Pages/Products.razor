@@ -1,6 +1,6 @@
 ﻿@page "/products"
-@inject BasketApiHttpClient BasketHttpClient
-@inject CatalogApiHttpClient CatalogHttpClient
+@inject YarpApiClient yarpApiClient
+
 
 @attribute [StreamRendering(true)]
 @rendermode InteractiveServer
@@ -60,12 +60,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        products = await CatalogHttpClient.GetProducts();
+        products = await yarpApiClient.GetProducts();
     }
 
     private async Task AddToCart(ProductResponse product)
     {  
-        var basket = await BasketHttpClient.LoadUserBasket();
+        var basket = await yarpApiClient.LoadUserBasket();
         var existingItem = basket.Items.SingleOrDefault(item => item.ProductId == product.Id);
         
         if (existingItem != null)
@@ -87,7 +87,7 @@ else
         }
       
 
-        await BasketHttpClient.UpdateBasket(basket);
+        await yarpApiClient.UpdateBasket(basket);
     
         // Show notification  
         showNotification = true;  

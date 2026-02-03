@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\Discount.Grpc\Discount.Grpc.csproj" />
     <ProjectReference Include="..\..\OrderingApi\OrderingApi.csproj" />
     <ProjectReference Include="..\..\WebApp\WebApp.csproj" />
+    <ProjectReference Include="..\..\YarpGateway\YarpGateway.csproj" />
   </ItemGroup>
 
 </Project>
