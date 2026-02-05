@@ -1,10 +1,12 @@
 using AppShared.Cqrs.Abstractions;
 using AppShared.Cqrs.Extensions;
+using AppShared.Events.Extensions;
 using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
 using BasketApi.Endpoints;
 using Discount.Grpc.Protos;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +22,9 @@ builder.Services.AddGrpcClient<DiscountService.DiscountServiceClient>(opt => opt
 builder.Services.AddScoped<DiscountGrpcService>();
 builder.Services.AddScoped<IBasketServiceApp, BasketServiceApp>();
 
-builder.Services.AddHttpClient<OrderingApiClient>(client =>
+builder.Services.AddHttpClient<CatalogApiClient>(client =>
 {
-    client.BaseAddress = new("https+http://ordering");
+    client.BaseAddress = new("https+http://catalog");
 }).AddStandardResilienceHandler(options =>
     {
         options.Retry.MaxRetryAttempts = 3;
@@ -32,6 +34,8 @@ builder.Services.AddHttpClient<OrderingApiClient>(client =>
 
 // Add CQRS Mediator
 builder.Services.AddRaptorMediator();
+
+builder.Services.AddMassTransitConfig(Assembly.GetExecutingAssembly());
 
 builder.Services.Scan(scan => scan
     .FromAssembliesOf(typeof(GetByUserName))

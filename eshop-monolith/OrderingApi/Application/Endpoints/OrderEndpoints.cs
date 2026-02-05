@@ -1,6 +1,5 @@
 ﻿using AppShared.Dtos;
 using OrderingApi.Application.Mappers;
-using OrderingApi.Models;
 
 namespace OrderingApi.Application.Endpoints;
 
@@ -33,15 +32,15 @@ public static class OrderEndpoints
         .Produces<List<OrderResponse>>(StatusCodes.Status200OK)
         .Produces(StatusCodes.Status404NotFound);
 
-        // POST (Create)
-        group.MapPost("/", async (Order order, OrderService service) =>
-        {
-            await service.CreateOrderAsync(order);
-            var orderDto = order.ToDto();
-            return Results.Created($"/orders/{orderDto.Id}", orderDto);
-        })
-        .WithName("CreateOrder")
-        .Produces<OrderResponse>(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status400BadRequest);
+        //// POST (Create) --> Create via EventBus
+        //group.MapPost("/", async (Order order, OrderService service) =>
+        //{
+        //    await service.CreateOrderAsync(order);
+        //    var orderDto = order.ToDto();
+        //    return Results.Created($"/orders/{orderDto.Id}", orderDto);
+        //})
+        //.WithName("CreateOrder")
+        //.Produces<OrderResponse>(StatusCodes.Status201Created)
+        //.Produces(StatusCodes.Status400BadRequest);
     }
 }
