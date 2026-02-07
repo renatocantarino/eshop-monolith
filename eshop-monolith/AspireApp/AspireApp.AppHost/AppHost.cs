@@ -45,8 +45,9 @@ var basket = builder
     .WaitFor(cache)
     .WaitFor(discountApi);
 
-var gateway = builder.AddProject<Projects.YarpGateway>("yarpgateway")
-                        .WithReference(catalog)
+var yarpapigateway = builder
+        .AddProject<Projects.YarpGateway>("yarpapigateway")
+        .WithReference(catalog)
         .WithReference(basket)
         .WithReference(ordering)
         .WaitFor(catalog)
@@ -58,7 +59,7 @@ var webapp = builder
         .WithExternalHttpEndpoints()
         .WithUrlForEndpoint("https", url => url.DisplayText = "EShop WebApp (HTTPS)")
         .WithUrlForEndpoint("http", url => url.DisplayText = "EShop WebApp (HTTP)")
-        .WithReference(gateway)
-        .WaitFor(gateway);
+        .WithReference(yarpapigateway)
+        .WaitFor(yarpapigateway);
 
 builder.Build().Run();
