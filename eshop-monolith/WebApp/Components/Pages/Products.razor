@@ -1,5 +1,6 @@
 ﻿@page "/products"
 @inject YarpApiClient yarpApiClient
+@inject ProtectedSessionStorage SessionStorage
 
 
 @attribute [StreamRendering(true)]
@@ -65,7 +66,8 @@ else
 
     private async Task AddToCart(ProductResponse product)
     {  
-        var basket = await yarpApiClient.LoadUserBasket();
+        var result = await SessionStorage.GetAsync<string>("UserSession");        
+        var basket = await yarpApiClient.LoadUserBasket(result.Value ?? "swn");
         var existingItem = basket.Items.SingleOrDefault(item => item.ProductId == product.Id);
         
         if (existingItem != null)

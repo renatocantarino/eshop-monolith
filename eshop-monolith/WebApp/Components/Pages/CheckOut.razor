@@ -1,6 +1,7 @@
 ﻿@page "/checkout"  
 @inject YarpApiClient BasketHttpClient
 @inject NavigationManager NavigationManager  
+@inject ProtectedSessionStorage SessionStorage
 @rendermode InteractiveServer  
 
 <PageTitle>CheckOut</PageTitle>  
@@ -90,7 +91,9 @@ else
 
    protected override async Task OnInitializedAsync()
    {  
-        basket = await BasketHttpClient.LoadUserBasket();
+        var result = await SessionStorage.GetAsync<string>("UserSession");
+
+        basket = await BasketHttpClient.LoadUserBasket(result.Value ?? "swn");
    }
 
    private async Task PerformCheckout()  

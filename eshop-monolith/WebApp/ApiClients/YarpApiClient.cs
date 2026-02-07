@@ -43,10 +43,8 @@ public class YarpApiClient(HttpClient httpClient)
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<ShoppingCartResponse> LoadUserBasket()
+    public async Task<ShoppingCartResponse> LoadUserBasket(string userName)
     {
-        // Get Basket If Not Exist Create New Basket with Default Logged In User Name: swn
-        var userName = "swn";
         ShoppingCartResponse basket;
 
         try

@@ -1,5 +1,62 @@
 ﻿@page "/"
 
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.ComponentModel.DataAnnotations
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager NavManager
+
 <PageTitle>.:: E-Shop Commerce .::</PageTitle>
 
-Welcome to your new E-Shop Commerce.
+
+
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="row w-100 justify-content-center">
+        <div class="col-md-6 col-lg-4 shadow p-4 mb-5 bg-white rounded">
+            <h3 class="text-center mb-4"></h3>
+
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <InputText id="email" class="form-control" @bind-Value="loginModel.Email" placeholder="seu@email.com" />
+                    <ValidationMessage For="@(() => loginModel.Email)" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <InputText id="password" type="password" class="form-control" @bind-Value="loginModel.Password" placeholder="******" />
+                    <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary">Acessar</button>
+                </div>
+            </EditForm>
+
+            <div class="text-center mt-3">
+                <a href="/recuperar-senha" class="text-decoration-none small">Esqueceu a senha?</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginDTO loginModel = new LoginDTO();
+
+    private async Task HandleLogin()
+    {
+        await SessionStorage.SetAsync("UserSession", loginModel.Email);
+        NavManager.NavigateTo("/products", forceLoad: true);
+        
+    }
+
+    public class LoginDTO
+    {
+        [Required(ErrorMessage = "O e-mail é obrigatório.")]
+        [EmailAddress(ErrorMessage = "E-mail inválido.")]
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

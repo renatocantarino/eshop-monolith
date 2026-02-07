@@ -1,36 +1,87 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">WebApp</a>
+﻿@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager NavManager
+
+@* Só renderiza o conteúdo se o usuário estiver logado *@
+@if (userLogged)
+{
+    <div class="top-row ps-3 navbar navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="">WebApp</a>
+        </div>
     </div>
-</div>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+    <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>      
+    <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+        <nav class="nav flex-column">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="products">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Products
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="products">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Products
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="cart">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Shopping Cart
-            </NavLink>
-        </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="cart">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Shopping Cart
+                </NavLink>
+            </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="orders">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Orders
-            </NavLink>
-        </div>
-    </nav>
-</div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="orders">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Orders
+                </NavLink>
+            </div>
 
+            <div class="nav-item px-3 mt-4">
+                <button class="btn btn-link nav-link text-danger" @onclick="HandleLogout">
+                    <span class="bi bi-box-arrow-right" aria-hidden="true"></span> Sair
+                </button>
+            </div>
+        </nav>
+    </div>
+}
+
+@code {
+    private bool userLogged = false;
+
+    // Usamos OnAfterRenderAsync para evitar erro de JS Interop no Blazor Server
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckSession();
+        }
+    }
+
+    private async Task CheckSession()
+    {
+        try
+        {
+            var result = await SessionStorage.GetAsync<string>("UserSession");
+            bool isNowLogged = result.Success && !string.IsNullOrEmpty(result.Value);
+
+            if (isNowLogged != userLogged)
+            {
+                userLogged = isNowLogged;
+                StateHasChanged(); // Força a atualização da interface
+            }
+        }
+        catch
+        {
+            // Silencia erro se o JS ainda não estiver pronto
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await SessionStorage.DeleteAsync("UserSession");
+        userLogged = false;
+        NavManager.NavigateTo("/login", forceLoad: true); // forceLoad garante que o layout seja atualizado
+    }
+}
