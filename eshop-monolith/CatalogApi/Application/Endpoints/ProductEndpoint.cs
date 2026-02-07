@@ -1,5 +1,4 @@
 ﻿using AppShared.Cqrs.Mediator;
-using AppShared.Dtos;
 using CatalogApi.Application.useCases;
 
 namespace CatalogApi.Application.Endpoints;
@@ -8,10 +7,10 @@ public static class ProductEndpoint
 {
     public static void MapProductEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGroup("/products")
-            .MapGet("/", GettAllRoute)
-            .WithName("GetAllProducts")
-            .Produces<List<ProductResponse>>(StatusCodes.Status200OK);
+        var group = app.MapGroup("/products");
+
+        group.MapGet("/", GettAllRoute)
+            .WithName("GetAllProducts");
     }
 
     private static async Task<IResult> GettAllRoute(IMediator raptor, CancellationToken ct)

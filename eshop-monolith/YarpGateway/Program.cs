@@ -4,17 +4,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddReverseProxy()
+builder.Services
+    .AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
     .AddServiceDiscoveryDestinationResolver();
 
-builder.Services.AddRateLimiter(rtlimiter =>
+builder.Services.AddRateLimiter(rateLimiterOptions =>
 {
-    rtlimiter.AddFixedWindowLimiter("Fixed", options =>
+    rateLimiterOptions.AddFixedWindowLimiter("fixed", options =>
     {
+        options.Window = TimeSpan.FromSeconds(10);
         options.PermitLimit = 5;
-        options.Window = TimeSpan.FromSeconds(15);
-        options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
     });
 });
 
@@ -22,9 +22,9 @@ var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
+app.UseHttpsRedirection();
+
 app.UseRateLimiter();
 app.MapReverseProxy();
-
-app.UseHttpsRedirection();
 
 app.Run();

@@ -25,12 +25,16 @@ var mongodb = mongo.AddDatabase("DiscountDB");
 
 var catalog = builder.AddProject<Projects.CatalogApi>("catalog")
         .WithReference(catalogDB)
-        .WaitFor(catalogDB);
+        .WithReference(cache)
+        .WaitFor(catalogDB)
+        .WaitFor(cache);
 
 var ordering = builder
         .AddProject<Projects.OrderingApi>("ordering")
         .WithReference(orderDb)
-        .WaitFor(orderDb);
+        .WithReference(cache)
+        .WaitFor(orderDb)
+        .WaitFor(cache);
 
 var discountApi = builder.AddProject<Projects.Discount_Grpc>("discount-grpc")
          .WithHttpEndpoint(port: 9988, name: "grpc")
@@ -47,18 +51,22 @@ var basket = builder
 
 var gateway = builder.AddProject<Projects.YarpGateway>("yarpgateway")
                         .WithReference(catalog)
-        .WithReference(basket)
-        .WithReference(ordering)
-        .WaitFor(catalog)
-        .WaitFor(basket)
-        .WaitFor(ordering);
+                        .WithReference(basket)
+                        .WithReference(ordering)
+                        .WaitFor(catalog)
+                        .WaitFor(basket)
+                        .WaitFor(ordering);
 
 var webapp = builder
         .AddProject<Projects.WebApp>("webapp")
         .WithExternalHttpEndpoints()
         .WithUrlForEndpoint("https", url => url.DisplayText = "EShop WebApp (HTTPS)")
         .WithUrlForEndpoint("http", url => url.DisplayText = "EShop WebApp (HTTP)")
-        .WithReference(gateway)
-        .WaitFor(gateway);
+        .WithReference(catalog)
+        .WithReference(basket)
+        .WithReference(ordering)
+        .WaitFor(catalog)
+        .WaitFor(basket)
+        .WaitFor(ordering);
 
 builder.Build().Run();

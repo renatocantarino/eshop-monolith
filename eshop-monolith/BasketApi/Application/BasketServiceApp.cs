@@ -1,7 +1,7 @@
-﻿using AppShared.Dtos;
+﻿using AppShared.Events;
 using BasketApi.ApiClients;
+using BasketApi.Application.Mappers;
 using BasketApi.Model;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
@@ -18,7 +18,7 @@ public interface IBasketServiceApp
     Task DeleteBasket(string userName);
 }
 
-public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderingApiClient, DiscountGrpcService discountGrpc) : IBasketServiceApp
+public class BasketServiceApp(IDistributedCache cache, DiscountGrpcService discountGrpc, IEventBus publishEndpoint) : IBasketServiceApp
 {
     public async Task<ShoppingCart?> GetBasket(string userName)
     {
@@ -51,16 +51,18 @@ public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderin
 
         basketCheckout.TotalPrice -= Math.Round(desconto.Amount * 100, 2);
 
-        var order = new OrderResponse
+        var eventMessage = new BasketCheckoutEvent
         {
-            UserName = basketCheckout.UserName,
+            Buyer = basketCheckout.UserName,
             TotalPrice = basketCheckout.TotalPrice,
+            Items = shoppingCart.Items.Select(i => i.ToDTO()).ToList(),
             FirstName = basketCheckout.FirstName,
             LastName = basketCheckout.LastName,
             EmailAddress = basketCheckout.EmailAddress,
             AddressLine = basketCheckout.AddressLine
         };
-        await orderingApiClient.CreateOrder(order);
+
+        await publishEndpoint.PublishAsync("order_stream", eventMessage);
 
         // delete the basket
         await DeleteBasket(basketCheckout.UserName);

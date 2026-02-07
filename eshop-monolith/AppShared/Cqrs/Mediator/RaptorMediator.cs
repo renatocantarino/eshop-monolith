@@ -44,4 +44,16 @@ public class RaptorMediator(IServiceProvider serviceProvider) : IMediator
 
         return await wrapper.HandleAsync(command, _serviceProvider, ct);
     }
+
+    public async Task PublishAsync<T>(T @event, CancellationToken ct) where T : IEvent
+    {
+        var eventType = @event.GetType();
+        var wrapper = (EventWrapper)_cache.GetOrAdd(eventType, t =>
+        {
+            var wrapperType = typeof(EventWrapperImpl<>).MakeGenericType(t);
+            return Activator.CreateInstance(wrapperType)!;
+        });
+
+        await wrapper.HandleAsync(@event, _serviceProvider, ct);
+    }
 }

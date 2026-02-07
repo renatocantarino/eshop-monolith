@@ -1,5 +1,6 @@
 ﻿@page "/products"
-@inject YarpApiClient yarpApiClient
+@inject CatalogApiClient yarpApiClient
+@inject BasketApiClient basketHttpClient
 
 
 @attribute [StreamRendering(true)]
@@ -65,7 +66,7 @@ else
 
     private async Task AddToCart(ProductResponse product)
     {  
-        var basket = await yarpApiClient.LoadUserBasket();
+        var basket = await basketHttpClient.LoadUserBasket();
         var existingItem = basket.Items.SingleOrDefault(item => item.ProductId == product.Id);
         
         if (existingItem != null)
@@ -87,7 +88,7 @@ else
         }
       
 
-        await yarpApiClient.UpdateBasket(basket);
+        await basketHttpClient.UpdateBasket(basket);
     
         // Show notification  
         showNotification = true;  

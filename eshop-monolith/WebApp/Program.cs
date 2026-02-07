@@ -5,9 +5,19 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.Services.AddHttpClient<YarpApiClient>(client =>
+builder.Services.AddHttpClient<CatalogApiClient>(client =>
 {
-    client.BaseAddress = new("https+http://yarpapigateway");
+    client.BaseAddress = new("https+http://catalog");
+});
+
+builder.Services.AddHttpClient<BasketApiClient>(client =>
+{
+    client.BaseAddress = new("https+http://basket");
+});
+
+builder.Services.AddHttpClient<OrderingApiClient>(client =>
+{
+    client.BaseAddress = new("https+http://ordering");
 });
 
 // Add services to the container.

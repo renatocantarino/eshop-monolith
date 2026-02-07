@@ -32,4 +32,6 @@ public interface IMediator
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The command result.</returns>
     Task<TResponse> ExecuteCommandAsync<TResponse>(ICommand<TResponse> command, CancellationToken ct = default);
+
+    Task PublishAsync<T>(T @event, CancellationToken ct) where T : IEvent;
 }

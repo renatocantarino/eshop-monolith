@@ -1,5 +1,6 @@
 using AppShared.Cqrs.Abstractions;
 using AppShared.Cqrs.Extensions;
+using AppShared.Events.Extensions;
 using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddRedisClient("cache");
 builder.AddRedisDistributedCache(connectionName: "cache");
 
 // Add application services
@@ -31,7 +33,8 @@ builder.Services.AddHttpClient<OrderingApiClient>(client =>
     });
 
 // Add CQRS Mediator
-builder.Services.AddRaptorMediator();
+builder.Services.AddRaptorMediator()
+                 .AddRedisEvents();
 
 builder.Services.Scan(scan => scan
     .FromAssembliesOf(typeof(GetByUserName))

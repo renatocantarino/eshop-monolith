@@ -1,5 +1,6 @@
 using AppShared.Cqrs.Mediator;
 using AppShared.Cqrs.Pipeline;
+using AppShared.Events;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AppShared.Cqrs.Extensions;
@@ -18,6 +19,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IMediator, RaptorMediator>();
         services.AddRaptorPipelineBehaviors();
+        return services;
+    }
+
+    public static IServiceCollection AddRedisEvents(this IServiceCollection services)
+    {
+        services.AddSingleton<IEventBus, RedisEventBus>();
         return services;
     }
 
