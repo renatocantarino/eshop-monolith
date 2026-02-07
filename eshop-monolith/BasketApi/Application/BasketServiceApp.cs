@@ -1,5 +1,6 @@
 ﻿using AppShared.Dtos;
 using BasketApi.ApiClients;
+using BasketApi.Application.Mappers;
 using BasketApi.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
@@ -11,6 +12,8 @@ public interface IBasketServiceApp
 {
     Task<ShoppingCart?> GetBasket(string userName);
 
+    Task<ShoppingCartResponse?> GetByUserNameAsync(string userName);
+
     Task UpdateBasket(ShoppingCart basket);
 
     Task CheckoutBasket(BasketCheckout basketCheckout);
@@ -18,13 +21,19 @@ public interface IBasketServiceApp
     Task DeleteBasket(string userName);
 }
 
-public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderingApiClient, DiscountGrpcService discountGrpc) : IBasketServiceApp
+public class BasketServiceApp(IDistributedCache cache, DiscountGrpcService discountGrpc) : IBasketServiceApp
 {
     public async Task<ShoppingCart?> GetBasket(string userName)
     {
         var basket = await cache.GetStringAsync(userName);
         return string.IsNullOrEmpty(basket) ? null :
             JsonSerializer.Deserialize<ShoppingCart>(basket);
+    }
+
+    public async Task<ShoppingCartResponse?> GetByUserNameAsync(string userName)
+    {
+        var basket = await GetBasket(userName);
+        return basket?.ToDTO();
     }
 
     public async Task UpdateBasket(ShoppingCart basket)
@@ -50,17 +59,6 @@ public class BasketServiceApp(IDistributedCache cache, OrderingApiClient orderin
         var desconto = await discountGrpc.GetDiscountAsync(1);
 
         basketCheckout.TotalPrice -= Math.Round(desconto.Amount * 100, 2);
-
-        var order = new OrderResponse
-        {
-            UserName = basketCheckout.UserName,
-            TotalPrice = basketCheckout.TotalPrice,
-            FirstName = basketCheckout.FirstName,
-            LastName = basketCheckout.LastName,
-            EmailAddress = basketCheckout.EmailAddress,
-            AddressLine = basketCheckout.AddressLine
-        };
-        await orderingApiClient.CreateOrder(order);
 
         // delete the basket
         await DeleteBasket(basketCheckout.UserName);

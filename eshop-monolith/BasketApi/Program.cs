@@ -1,5 +1,6 @@
 using AppShared.Cqrs.Abstractions;
 using AppShared.Cqrs.Extensions;
+using AppShared.Messaging;
 using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
@@ -12,23 +13,23 @@ builder.AddServiceDefaults();
 
 builder.AddRedisDistributedCache(connectionName: "cache");
 
+// Add Redis connection for Event Bus (Streams)
+builder.AddRedisClient(connectionName: "cache");
+
+// Configure Redis Messaging options
+builder.Services.Configure<RedisMessagingOptions>(
+    builder.Configuration.GetSection(RedisMessagingOptions.SectionName));
+
+// Register Event Bus
+builder.Services.AddSingleton<IEventBus, RedisEventBus>();
+
 // Add application services
 
 builder.Services.AddGrpcClient<DiscountService.DiscountServiceClient>(opt => opt.Address = new Uri("https://localhost:9987"));
 
-// 2. DEPOIS: Registre os seus serviços que dependem do gRPC
+// 2. DEPOIS: Registre os seus serviÃ§os que dependem do gRPC
 builder.Services.AddScoped<DiscountGrpcService>();
 builder.Services.AddScoped<IBasketServiceApp, BasketServiceApp>();
-
-builder.Services.AddHttpClient<OrderingApiClient>(client =>
-{
-    client.BaseAddress = new("https+http://ordering");
-}).AddStandardResilienceHandler(options =>
-    {
-        options.Retry.MaxRetryAttempts = 3;
-        options.Retry.Delay = TimeSpan.FromSeconds(2);
-        options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
-    });
 
 // Add CQRS Mediator
 builder.Services.AddRaptorMediator();

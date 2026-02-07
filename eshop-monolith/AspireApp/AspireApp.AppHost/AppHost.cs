@@ -30,7 +30,9 @@ var catalog = builder.AddProject<Projects.CatalogApi>("catalog")
 var ordering = builder
         .AddProject<Projects.OrderingApi>("ordering")
         .WithReference(orderDb)
-        .WaitFor(orderDb);
+        .WithReference(cache)
+        .WaitFor(orderDb)
+        .WaitFor(cache);
 
 var discountApi = builder.AddProject<Projects.Discount_Grpc>("discount-grpc")
          .WithHttpEndpoint(port: 9988, name: "grpc")
