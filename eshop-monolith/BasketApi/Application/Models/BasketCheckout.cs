@@ -1,4 +1,4 @@
-namespace BasketApi.Model;
+namespace BasketApi.Application.Models;
 
 public class BasketCheckout
 {

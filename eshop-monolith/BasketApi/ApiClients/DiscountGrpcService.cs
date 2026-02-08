@@ -1,4 +1,4 @@
-﻿using BasketApi.Models;
+﻿using BasketApi.Application.Models;
 using Discount.Grpc.Protos;
 
 namespace BasketApi.ApiClients;

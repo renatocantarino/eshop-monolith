@@ -1,4 +1,4 @@
-﻿namespace BasketApi.Models;
+﻿namespace BasketApi.Application.Models;
 
 public class Cupom
 {

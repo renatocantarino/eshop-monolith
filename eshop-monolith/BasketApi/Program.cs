@@ -6,12 +6,23 @@ using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
 using BasketApi.Endpoints;
 using Discount.Grpc.Protos;
+using Microsoft.Extensions.Caching.Hybrid;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
 builder.AddRedisDistributedCache(connectionName: "cache");
+
+builder.Services.AddHybridCache(options =>
+{
+    options.DefaultEntryOptions = new HybridCacheEntryOptions
+    {
+        Expiration = TimeSpan.FromMinutes(5),
+        LocalCacheExpiration = TimeSpan.FromMinutes(1),
+        Flags = HybridCacheEntryFlags.DisableLocalCache
+    };
+});
 
 // Add Redis connection for Event Bus (Streams)
 builder.AddRedisClient(connectionName: "cache");

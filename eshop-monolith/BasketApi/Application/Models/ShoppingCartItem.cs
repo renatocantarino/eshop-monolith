@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BasketApi.Model;
+namespace BasketApi.Application.Models;
 
 public class ShoppingCartItem
 {

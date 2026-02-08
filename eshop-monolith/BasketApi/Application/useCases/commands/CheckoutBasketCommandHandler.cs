@@ -33,7 +33,7 @@ public class CheckoutBasketCommandHandler : ICommandHandler<CheckoutBasketComman
         var basketCheckout = command.response;
 
         // Get the shopping cart
-        var cart = await _basketServiceApp.GetByUserNameAsync(basketCheckout.UserName);
+        var cart = await _basketServiceApp.GetBasketAsync(basketCheckout.UserName);
         if (cart == null)
         {
             _logger.LogWarning("Shopping cart for user {UserName} not found during checkout", basketCheckout.UserName);

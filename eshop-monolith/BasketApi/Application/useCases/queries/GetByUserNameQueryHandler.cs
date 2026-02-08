@@ -1,6 +1,5 @@
 using AppShared.Cqrs.Abstractions;
 using AppShared.Dtos;
-using BasketApi.Application.Mappers;
 
 namespace BasketApi.Application.useCases.queries;
 
@@ -22,8 +21,8 @@ public class GetByUserNameQueryHandler(IBasketServiceApp basketServiceApp) : IQu
         ArgumentNullException.ThrowIfNull(query, nameof(query));
         ArgumentException.ThrowIfNullOrWhiteSpace(query.UserName, nameof(query.UserName));
 
-        var cart = await _basketServiceApp.GetBasket(query.UserName);
+        var cart = await _basketServiceApp.GetBasketAsync(query.UserName, ct);
 
-        return cart?.ToDTO();
+        return cart;
     }
 }

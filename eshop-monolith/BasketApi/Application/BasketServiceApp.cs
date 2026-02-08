@@ -1,71 +1,97 @@
 ﻿using AppShared.Dtos;
 using BasketApi.ApiClients;
+using BasketApi.Application.Data;
 using BasketApi.Application.Mappers;
-using BasketApi.Model;
+using BasketApi.Application.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
+using Microsoft.Extensions.Caching.Hybrid;
 
 namespace BasketApi.Application;
 
 public interface IBasketServiceApp
 {
-    Task<ShoppingCart?> GetBasket(string userName);
+    Task<ShoppingCartResponse?> GetBasketAsync(string userName, CancellationToken ct);
 
-    Task<ShoppingCartResponse?> GetByUserNameAsync(string userName);
+    Task UpdateBasket(ShoppingCart basket, CancellationToken ct);
 
-    Task UpdateBasket(ShoppingCart basket);
+    Task CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct);
 
-    Task CheckoutBasket(BasketCheckout basketCheckout);
-
-    Task DeleteBasket(string userName);
+    Task DeleteBasket(string userName, CancellationToken ct);
 }
 
-public class BasketServiceApp(IDistributedCache cache, DiscountGrpcService discountGrpc) : IBasketServiceApp
+public class BasketServiceApp(HybridCache cache, DiscountGrpcService discountGrpc, BasketDbContext dbContext) : IBasketServiceApp
 {
-    public async Task<ShoppingCart?> GetBasket(string userName)
+    public async Task<ShoppingCartResponse?> GetBasketAsync(string userName, CancellationToken ct)
     {
-        var basket = await cache.GetStringAsync(userName);
-        return string.IsNullOrEmpty(basket) ? null :
-            JsonSerializer.Deserialize<ShoppingCart>(basket);
-    }
+        var basket = await cache.GetOrCreateAsync(userName, async token =>
+        {
+            return await dbContext.ShoppingCarts
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x => x.UserName == userName, token);
+        },
+        options: new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(15),
+            LocalCacheExpiration = TimeSpan.FromMinutes(5)
+        },
+        cancellationToken: ct);
 
-    public async Task<ShoppingCartResponse?> GetByUserNameAsync(string userName)
-    {
-        var basket = await GetBasket(userName);
         return basket?.ToDTO();
     }
 
-    public async Task UpdateBasket(ShoppingCart basket)
+    public async Task UpdateBasket(ShoppingCart basket, CancellationToken ct)
     {
-        // Next Section:
-        // Before update(Add/remove Item) into SC, we should call Catalog ms GetProductById method
-        // Get latest product information and set Price and ProductName when adding item into SC
+        var existingBasket = await dbContext.ShoppingCarts
+             .Include(x => x.Items)
+             .FirstOrDefaultAsync(x => x.UserName == basket.UserName, ct);
 
-        await cache.SetStringAsync(basket.UserName, JsonSerializer.Serialize(basket));
+        if (existingBasket == null)
+        {
+            dbContext.ShoppingCarts.Add(basket);
+        }
+        else
+        {
+            existingBasket.Items.Clear();
+            existingBasket.Items.AddRange(basket.Items);
+
+            dbContext.ShoppingCarts.Update(existingBasket);
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        await cache.SetAsync(
+        key: basket.UserName,
+        value: basket,
+        options: new HybridCacheEntryOptions
+        {
+            Expiration = TimeSpan.FromMinutes(30)
+        },
+        tags: new[] { $"cart:{basket.UserName}" });
     }
 
-    public async Task CheckoutBasket(BasketCheckout basketCheckout)
+    public async Task CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct)
     {
-        var shoppingCart = await GetBasket(basketCheckout.UserName);
+        var shoppingCart = await GetBasketAsync(basketCheckout.UserName, ct);
         if (shoppingCart is null)
         {
             throw new InvalidOperationException($"Shopping cart for user '{basketCheckout.UserName}' not found.");
         }
 
-        // Set total price on basket checkout event message
-        basketCheckout.TotalPrice = shoppingCart.TotalPrice;
-
         var desconto = await discountGrpc.GetDiscountAsync(1);
 
-        basketCheckout.TotalPrice -= Math.Round(desconto.Amount * 100, 2);
+        var finalPrice = shoppingCart.TotalPrice - desconto.Amount;
+        basketCheckout.TotalPrice = Math.Max(0, finalPrice);
 
         // delete the basket
-        await DeleteBasket(basketCheckout.UserName);
+        await DeleteBasket(basketCheckout.UserName, ct);
     }
 
-    public async Task DeleteBasket(string userName)
+    public async Task DeleteBasket(string userName, CancellationToken ct)
     {
-        await cache.RemoveAsync(userName);
+        await dbContext.ShoppingCarts
+            .Where(x => x.UserName == userName)
+            .ExecuteDeleteAsync(ct);
+
+        await cache.RemoveAsync(userName, ct);
     }
 }

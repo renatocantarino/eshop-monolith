@@ -1,5 +1,5 @@
 using AppShared.Dtos;
-using BasketApi.Model;
+using BasketApi.Application.Models;
 
 namespace BasketApi.Application.Mappers;
 
