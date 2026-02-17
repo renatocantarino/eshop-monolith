@@ -32,29 +32,20 @@ public class CheckoutBasketCommandHandler : ICommandHandler<CheckoutBasketComman
 
         var basketCheckout = command.response;
 
-        // Get the shopping cart
-        var cart = await _basketServiceApp.GetBasketAsync(basketCheckout.UserName);
-        if (cart == null)
-        {
-            _logger.LogWarning("Shopping cart for user {UserName} not found during checkout", basketCheckout.UserName);
-            throw new InvalidOperationException($"Shopping cart for user '{basketCheckout.UserName}' not found.");
-        }
-
-        // Perform checkout business logic
-        await _basketServiceApp.CheckoutBasket(basketCheckout.ToModel());
+        var basket = await _basketServiceApp.CheckoutBasket(basketCheckout.ToModel(), ct);
 
         // Create integration event
         var orderCreatedEvent = new OrderCreatedEvent(
             CustomerId: basketCheckout.UserName,
-            BasketId: cart.Id,
-            Items: cart.Items.Select(item => new OrderItemDto(
+            BasketId: basket.ShoppingCartId,
+            Items: basket.Items.Select(item => new OrderItemDto(
                 ProductId: item.ProductId,
                 ProductName: item.ProductName,
                 Quantity: item.Quantity,
                 Price: item.Price,
                 Color: item.Color
             )).ToList(),
-            TotalPrice: cart.TotalPrice,
+            TotalPrice: basket.TotalPrice,
             FirstName: basketCheckout.FirstName,
             LastName: basketCheckout.LastName,
             EmailAddress: basketCheckout.EmailAddress,

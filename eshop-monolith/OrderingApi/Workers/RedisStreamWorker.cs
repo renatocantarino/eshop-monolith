@@ -133,6 +133,11 @@ public class RedisStreamWorker : BackgroundService
         }
     }
 
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private async Task ProcessMessageAsync(
         IDatabase database,
         string streamName,
@@ -160,24 +165,22 @@ public class RedisStreamWorker : BackgroundService
             var eventType = eventTypeValue.ToString();
             var eventData = dataValue.ToString();
 
-            if (eventType == nameof(OrderCreatedEvent))
+            switch (eventType)
             {
-                var orderEvent = JsonSerializer.Deserialize<OrderCreatedEvent>(
-                    eventData!,
-                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                case nameof(OrderCreatedEvent):
+                    if (JsonSerializer.Deserialize<OrderCreatedEvent>(eventData!, _jsonOptions) is { } orderEvent)
+                    {
+                        await ProcessOrderCreatedEventAsync(orderEvent, cancellationToken);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Failed to deserialize OrderCreatedEvent. MessageId: {MessageId}", messageId);
+                    }
+                    break;
 
-                if (orderEvent != null)
-                {
-                    await ProcessOrderCreatedEventAsync(orderEvent, cancellationToken);
-                }
-                else
-                {
-                    _logger.LogWarning("Failed to deserialize OrderCreatedEvent from message {MessageId}", messageId);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("Unknown event type {EventType} in message {MessageId}", eventType, messageId);
+                default:
+                    _logger.LogInformation("Event type {EventType} ignored.", eventType);
+                    break;
             }
 
             // Acknowledge the message after successful processing
@@ -201,7 +204,7 @@ public class RedisStreamWorker : BackgroundService
                 ex,
                 "Error processing message {MessageId}. Message will remain in pending list for retry",
                 messageId);
-            
+
             // Don't acknowledge - message will be retried
             // In production, you might want to implement a dead letter queue after max retries
         }

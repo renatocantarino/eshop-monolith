@@ -4,6 +4,7 @@ using AppShared.Messaging;
 using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
+using BasketApi.Data;
 using BasketApi.Endpoints;
 using Discount.Grpc.Protos;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -12,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddNpgsqlDbContext<BasketDbContext>(connectionName: "BasketDB");
 builder.AddRedisDistributedCache(connectionName: "cache");
 
 builder.Services.AddHybridCache(options =>
@@ -62,6 +64,7 @@ app.MapDefaultEndpoints();
 
 app.UseHttpsRedirection();
 
+app.UseMigration();
 app.MapEndpointsBasket();
 
 app.Run();

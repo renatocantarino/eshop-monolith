@@ -9,7 +9,7 @@ public class DeleteBasketCommandHandler(IBasketServiceApp basketServiceApp) : IC
     public async Task<Unit> HandleAsync(DeleteBasketCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command, nameof(command));
-        await _basketServiceApp.DeleteBasket(command.userName);
+        await _basketServiceApp.DeleteBasket(command.userName, ct);
 
         return Unit.Value;
     }

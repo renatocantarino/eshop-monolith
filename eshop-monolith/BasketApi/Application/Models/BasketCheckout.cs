@@ -14,4 +14,8 @@ public class BasketCheckout
     public string EmailAddress { get; set; } = default!;
 
     public string AddressLine { get; set; } = default!;
+
+    public List<ShoppingCartItem> Items { get; set; } = new List<ShoppingCartItem>();
+
+    public int ShoppingCartId { get; set; } = default!;
 }

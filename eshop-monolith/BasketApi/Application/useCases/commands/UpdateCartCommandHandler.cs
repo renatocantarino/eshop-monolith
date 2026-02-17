@@ -11,7 +11,7 @@ public class UpdateCartCommandHandler(IBasketServiceApp basketServiceApp) : ICom
     public async Task<ShoppingCartResponse> HandleAsync(UpdateCartCommand command, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(command, nameof(command));
-        await _basketServiceApp.UpdateBasket(command.response.ToModel());
+        await _basketServiceApp.UpdateBasket(command.response.ToModel(), ct);
 
         return command.response;
     }

@@ -3,11 +3,13 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Backing Services
 var postgres = builder
         .AddPostgres("postgres")
+        .WithImageTag("17-alpine")
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
 var catalogDB = postgres.AddDatabase("CatalogDB");
 var orderDb = postgres.AddDatabase("OrderDB");
+var basketDb = postgres.AddDatabase("BasketDB");
 
 var cache = builder
         .AddRedis("cache")
@@ -42,8 +44,10 @@ var discountApi = builder.AddProject<Projects.Discount_Grpc>("discount-grpc")
 
 var basket = builder
     .AddProject<Projects.BasketApi>("basket")
+       .WithReference(basketDb)
     .WithReference(cache)
     .WithReference(discountApi) // Permite que o Basket encontre a URL do gRPC
+    .WaitFor(basketDb)
     .WaitFor(cache)
     .WaitFor(discountApi);
 

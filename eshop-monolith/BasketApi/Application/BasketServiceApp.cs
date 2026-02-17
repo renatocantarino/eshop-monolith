@@ -1,10 +1,12 @@
 ﻿using AppShared.Dtos;
+using AppShared.IntegrationEvents;
 using BasketApi.ApiClients;
-using BasketApi.Application.Data;
 using BasketApi.Application.Mappers;
 using BasketApi.Application.Models;
+using BasketApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Hybrid;
+using System.Text.Json;
 
 namespace BasketApi.Application;
 
@@ -14,7 +16,7 @@ public interface IBasketServiceApp
 
     Task UpdateBasket(ShoppingCart basket, CancellationToken ct);
 
-    Task CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct);
+    Task<BasketCheckout> CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct);
 
     Task DeleteBasket(string userName, CancellationToken ct);
 }
@@ -69,21 +71,66 @@ public class BasketServiceApp(HybridCache cache, DiscountGrpcService discountGrp
         tags: new[] { $"cart:{basket.UserName}" });
     }
 
-    public async Task CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct)
+    public async Task<BasketCheckout> CheckoutBasket(BasketCheckout basketCheckout, CancellationToken ct)
     {
-        var shoppingCart = await GetBasketAsync(basketCheckout.UserName, ct);
-        if (shoppingCart is null)
+        // Criamos uma variável para armazenar o carrinho e retorná-lo após a transação
+        ShoppingCart shoppingCart = null!;
+
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+
+        await strategy.ExecuteAsync(async () =>
         {
-            throw new InvalidOperationException($"Shopping cart for user '{basketCheckout.UserName}' not found.");
-        }
+            // Importante: A transação deve ser aberta DENTRO da ExecutionStrategy para suportar retentativas
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
 
-        var desconto = await discountGrpc.GetDiscountAsync(1);
+            try
+            {
+                shoppingCart = await dbContext.ShoppingCarts
+                    .TagWith("Checkout_GetCartWithItems")
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.UserName == basketCheckout.UserName, ct);
 
-        var finalPrice = shoppingCart.TotalPrice - desconto.Amount;
-        basketCheckout.TotalPrice = Math.Max(0, finalPrice);
+                if (shoppingCart is null)
+                {
+                    throw new InvalidOperationException($"Shopping cart for user '{basketCheckout.UserName}' not found.");
+                }
 
-        // delete the basket
-        await DeleteBasket(basketCheckout.UserName, ct);
+                // 1. Atualiza o TotalPrice no evento
+                basketCheckout.TotalPrice = shoppingCart.TotalPrice;
+                basketCheckout.Items = shoppingCart.Items;
+                basketCheckout.ShoppingCartId = shoppingCart.Id;
+
+                // 2. Adiciona ao Outbox
+                var outboxMessage = new OutboxMessage
+                {
+                    Id = Guid.NewGuid(),
+                    Type = typeof(OrderCreatedEvent).Name!,
+                    Content = JsonSerializer.Serialize(basketCheckout, (JsonSerializerOptions?)null),
+                    OccuredOn = DateTime.UtcNow
+                };
+
+                dbContext.OutboxMessages.Add(outboxMessage);
+
+                // 3. Remove o carrinho do banco
+                dbContext.ShoppingCarts.Remove(shoppingCart);
+
+                // 4. Salva e Commita
+                await dbContext.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                // 5. Invalida o Cache (após o commit para evitar inconsistência se o DB falhar)
+                await cache.RemoveAsync(basketCheckout.UserName, ct);
+            }
+            catch
+            {
+                // O Rollback é automático ao dar dispose no transaction se o Commit não foi chamado,
+                // mas mantê-lo explicitamente é uma boa prática.
+                await transaction.RollbackAsync(ct);
+                throw; // Nunca "engula" a exceção em uma Strategy, senão ela não saberá se deve tentar novamente.
+            }
+        });
+
+        return basketCheckout;
     }
 
     public async Task DeleteBasket(string userName, CancellationToken ct)
