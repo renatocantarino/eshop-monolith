@@ -34,35 +34,6 @@ public class CheckoutBasketCommandHandler : ICommandHandler<CheckoutBasketComman
 
         var basket = await _basketServiceApp.CheckoutBasket(basketCheckout.ToModel(), ct);
 
-        // Create integration event
-        var orderCreatedEvent = new OrderCreatedEvent(
-            CustomerId: basketCheckout.UserName,
-            BasketId: basket.ShoppingCartId,
-            Items: basket.Items.Select(item => new OrderItemDto(
-                ProductId: item.ProductId,
-                ProductName: item.ProductName,
-                Quantity: item.Quantity,
-                Price: item.Price,
-                Color: item.Color
-            )).ToList(),
-            TotalPrice: basket.TotalPrice,
-            FirstName: basketCheckout.FirstName,
-            LastName: basketCheckout.LastName,
-            EmailAddress: basketCheckout.EmailAddress,
-            AddressLine: basketCheckout.AddressLine
-        );
-
-        // Publish event to Redis Streams
-        var messageId = await _eventBus.PublishAsync(
-            _options.OrdersStreamName,
-            orderCreatedEvent,
-            ct);
-
-        _logger.LogInformation(
-            "Published OrderCreatedEvent for user {UserName} with message ID {MessageId}",
-            basketCheckout.UserName,
-            messageId);
-
         return Unit.Value;
     }
 }

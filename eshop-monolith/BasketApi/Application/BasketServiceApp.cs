@@ -88,7 +88,7 @@ public class BasketServiceApp(HybridCache cache, DiscountGrpcService discountGrp
                 shoppingCart = await dbContext.ShoppingCarts
                     .TagWith("Checkout_GetCartWithItems")
                     .Include(x => x.Items)
-                    .FirstOrDefaultAsync(x => x.UserName == basketCheckout.UserName, ct);
+                    .FirstOrDefaultAsync(x => x.UserName == basketCheckout.EmailAddress, ct);
 
                 if (shoppingCart is null)
                 {

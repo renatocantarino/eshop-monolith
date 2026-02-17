@@ -37,31 +37,36 @@ public class OutboxProcessor(IServiceProvider serviceProvider, IEventBus eventBu
                     try
                     {
                         var eventType = Type.GetType(message.Type);
-                        if (eventType == null) continue;
+                        if (eventType == null)
+                        {
+                            logger.LogWarning("Tipo de evento desconhecido: {Type}", message.Type);
+                            continue;
+                        }
 
                         var eventData = JsonSerializer.Deserialize(message.Content, eventType);
 
-                        if (eventData == null) continue;
+                        if (eventData is not BasketCheckout cart)
+                        {
+                            logger.LogWarning("O conteúdo da mensagem não pôde ser convertido para BasketCheckout.");
+                            continue;
+                        }
 
-                        var cart = eventData as ShoppingCart;
-
-                        //// Create integration event
-                        //var orderCreatedEvent = new OrderCreatedEvent(
-                        //    CustomerId: cart.UserName,
-                        //    BasketId: cart.Id,
-                        //    Items: cart.Items.Select(item => new OrderItemDto(
-                        //        ProductId: item.ProductId,
-                        //        ProductName: item.ProductName,
-                        //        Quantity: item.Quantity,
-                        //        Price: item.Price,
-                        //        Color: item.Color
-                        //    )).ToList(),
-                        //    TotalPrice: cart.TotalPrice,
-                        //    FirstName: cart.FirstName,
-                        //    LastName: cart.LastName,
-                        //    EmailAddress: cart.EmailAddress,
-                        //    AddressLine: cart.AddressLine
-                        //);
+                        var orderCreatedEvent = new OrderCreatedEvent(
+                            CustomerId: cart.UserName,
+                            BasketId: cart.ShoppingCartId,
+                            Items: cart.Items.Select(item => new OrderItemDto(
+                                item.ProductId,
+                                item.ProductName,
+                                item.Quantity,
+                                item.Price,
+                                item.Color
+                            )).ToList(),
+                            TotalPrice: cart.TotalPrice,
+                            FirstName: cart.FirstName,
+                            LastName: cart.LastName,
+                            EmailAddress: cart.EmailAddress,
+                            AddressLine: cart.AddressLine
+                        );
 
                         await eventBus.PublishAsync(options.Value.OrdersStreamName, eventData, stoppingToken);
 

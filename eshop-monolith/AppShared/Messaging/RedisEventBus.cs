@@ -19,7 +19,7 @@ public class RedisEventBus : IEventBus
     {
         _redis = redis ?? throw new ArgumentNullException(nameof(redis));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -28,8 +28,8 @@ public class RedisEventBus : IEventBus
     }
 
     public async Task<string> PublishAsync<T>(
-        string streamName, 
-        T @event, 
+        string streamName,
+        T @event,
         CancellationToken cancellationToken = default) where T : class
     {
         if (string.IsNullOrWhiteSpace(streamName))
@@ -37,15 +37,12 @@ public class RedisEventBus : IEventBus
             throw new ArgumentException("Stream name cannot be null or empty.", nameof(streamName));
         }
 
-        if (@event == null)
-        {
-            throw new ArgumentNullException(nameof(@event));
-        }
+        ArgumentNullException.ThrowIfNull(@event);
 
         try
         {
             var database = _redis.GetDatabase();
-            
+
             // Serialize the event to JSON
             var eventJson = JsonSerializer.Serialize(@event, _jsonOptions);
             var eventType = typeof(T).Name;
@@ -60,7 +57,7 @@ public class RedisEventBus : IEventBus
 
             // Add to Redis Stream
             var messageId = await database.StreamAddAsync(
-                streamName, 
+                streamName,
                 streamEntries,
                 flags: CommandFlags.None);
 
