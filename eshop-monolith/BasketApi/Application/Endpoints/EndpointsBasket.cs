@@ -18,7 +18,7 @@ public static class EndpointsBasket
 
             if (shoppingCart is null)
             {
-                return Results.NotFound($"Shopping cart for user '{userName}' not found.");
+                return Results.Ok(new ShoppingCartResponse { UserName = userName, Items = [] });
             }
 
             return Results.Ok(shoppingCart);

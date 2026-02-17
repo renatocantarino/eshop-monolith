@@ -40,7 +40,7 @@ public class OrderService(OrderDbContext dbContext, ILogger<OrderService> logger
 
         var order = new Order
         {
-            UserName = @event.CustomerId,
+            UserName = @event.EmailAddress,
             TotalPrice = @event.TotalPrice,
             FirstName = @event.FirstName,
             LastName = @event.LastName,

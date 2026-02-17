@@ -1,6 +1,5 @@
 using AppShared.Cqrs.Abstractions;
 using AppShared.Dtos;
-using AppShared.IntegrationEvents;
 using AppShared.Messaging;
 using BasketApi.Application.Mappers;
 using Microsoft.Extensions.Options;

@@ -5,6 +5,7 @@ using BasketApi.ApiClients;
 using BasketApi.Application;
 using BasketApi.Application.useCases.queries;
 using BasketApi.Data;
+using BasketApi.Data.Processors;
 using BasketApi.Endpoints;
 using Discount.Grpc.Protos;
 using Microsoft.Extensions.Caching.Hybrid;
@@ -55,6 +56,8 @@ builder.Services.Scan(scan => scan
     .AddClasses(classes => classes.AssignableTo(typeof(ICommandHandler<,>)))
         .AsImplementedInterfaces()
         .WithScopedLifetime());
+
+builder.Services.AddHostedService<OutboxProcessor>();
 
 var app = builder.Build();
 

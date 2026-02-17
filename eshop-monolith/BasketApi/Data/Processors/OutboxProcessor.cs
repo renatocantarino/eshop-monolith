@@ -1,5 +1,6 @@
 ﻿using AppShared.IntegrationEvents;
 using AppShared.Messaging;
+using BasketApi.Application.Mappers;
 using BasketApi.Application.Models;
 using BasketApi.Data;
 using Microsoft.EntityFrameworkCore;
@@ -36,39 +37,23 @@ public class OutboxProcessor(IServiceProvider serviceProvider, IEventBus eventBu
                 {
                     try
                     {
-                        var eventType = Type.GetType(message.Type);
-                        if (eventType == null)
+                        switch (message.Type)
                         {
-                            logger.LogWarning("Tipo de evento desconhecido: {Type}", message.Type);
-                            continue;
+                            case nameof(OrderCreatedEvent):
+                                var eventData = JsonSerializer.Deserialize<OrderCreatedEvent>(message.Content);
+
+                                if (eventData is null)
+                                {
+                                    logger.LogWarning("Mensagem {Id} resultou em conteúdo nulo após desserialização.", message.Id);
+                                    continue; // Ou trate conforme sua lógica de erro
+                                }
+
+                                await eventBus.PublishAsync(options.Value.OrdersStreamName, eventData, stoppingToken);
+                                break;
+
+                            default:
+                                throw new NotSupportedException($"Tipo de evento não suportado: {message.Type}");
                         }
-
-                        var eventData = JsonSerializer.Deserialize(message.Content, eventType);
-
-                        if (eventData is not BasketCheckout cart)
-                        {
-                            logger.LogWarning("O conteúdo da mensagem não pôde ser convertido para BasketCheckout.");
-                            continue;
-                        }
-
-                        var orderCreatedEvent = new OrderCreatedEvent(
-                            CustomerId: cart.UserName,
-                            BasketId: cart.ShoppingCartId,
-                            Items: cart.Items.Select(item => new OrderItemDto(
-                                item.ProductId,
-                                item.ProductName,
-                                item.Quantity,
-                                item.Price,
-                                item.Color
-                            )).ToList(),
-                            TotalPrice: cart.TotalPrice,
-                            FirstName: cart.FirstName,
-                            LastName: cart.LastName,
-                            EmailAddress: cart.EmailAddress,
-                            AddressLine: cart.AddressLine
-                        );
-
-                        await eventBus.PublishAsync(options.Value.OrdersStreamName, eventData, stoppingToken);
 
                         message.ProcessedOn = DateTime.UtcNow;
                     }
