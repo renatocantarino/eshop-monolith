@@ -24,4 +24,8 @@
     </Protobuf>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Application\EventHandler\" />
+  </ItemGroup>
+
 </Project>

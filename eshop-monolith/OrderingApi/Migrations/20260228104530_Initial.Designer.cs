@@ -11,8 +11,8 @@ using OrderingApi.Data;
 namespace OrderingApi.Migrations
 {
     [DbContext(typeof(OrderDbContext))]
-    [Migration("20260131143658_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260228104530_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -47,6 +47,9 @@ namespace OrderingApi.Migrations
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int>("OrderStatus")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("numeric");

@@ -19,7 +19,7 @@ public static class MassTransitConfig
             config.UsingRabbitMq((context, cfg) =>
             {
                 var configuration = context.GetRequiredService<IConfiguration>();
-                var connectionString = configuration.GetConnectionString("RabbitMQ");
+                var connectionString = configuration.GetConnectionString("rabbitmq");
                 cfg.Host(connectionString);
                 cfg.ConfigureEndpoints(context);
             });

@@ -12,4 +12,13 @@ public class Order
     public string LastName { get; set; } = default!;
     public string EmailAddress { get; set; } = default!;
     public string AddressLine { get; set; } = default!;
+
+    public OrderStatus OrderStatus { get; set; } = OrderStatus.Created;
+}
+
+public enum OrderStatus
+{
+    Created,
+    Paid,
+    Cancelled
 }

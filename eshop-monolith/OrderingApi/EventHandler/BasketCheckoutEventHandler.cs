@@ -10,7 +10,7 @@ public class BasketCheckoutEventHandler(OrderService orderService,
 {
     public async Task Consume(ConsumeContext<BasketCheckoutEvent> context)
     {
-        logger.LogInformation("BasketCheckoutEvent received: {EventId}-{BasketId}-{UserName}-{TotalPrice}",
+        logger.LogInformation("BasketCheckoutEvent received: {EventId}#{BasketId}#{UserName}#{TotalPrice}",
             context.Message.EventId, context.Message.BasketId, context.Message.UserName, context.Message.TotalPrice);
 
         var order = new Order

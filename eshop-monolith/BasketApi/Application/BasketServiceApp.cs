@@ -1,4 +1,5 @@
-﻿using BasketApi.ApiClients;
+﻿using AppShared.Events;
+using BasketApi.ApiClients;
 using BasketApi.Model;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -24,31 +25,15 @@ public class BasketServiceApp(IDistributedCache cache, CatalogApiClient catalogA
 {
     public async Task<ShoppingCart?> GetBasket(string userName)
     {
-        var cacheKey = $"basket:{userName}";
+        var basket = await cache.GetStringAsync(userName);
 
-        byte[]? basketBytes = await cache.GetAsync(cacheKey);
-
-        if (basketBytes is null || basketBytes.Length == 0)
-            return null;
-
-        return JsonSerializer.Deserialize<ShoppingCart>(basketBytes);
+        return string.IsNullOrEmpty(basket) ? null : JsonSerializer.Deserialize<ShoppingCart>(basket);
     }
 
     public async Task UpdateBasket(ShoppingCart basket)
     {
         //N+1 problem
-        //foreach (var item in basket.Items)
-        //{
-        //    var product = await catalogApiClient.GetProductById(item.ProductId);
-        //    if (product is not null)
-        //    {
-        //        item.ProductName = product.Name;
-        //        item.Price = product.Price;
-        //    }
-        //}
-
-        //refact
-        var tasks = basket.Items.Select(async item =>
+        foreach (var item in basket.Items)
         {
             var product = await catalogApiClient.GetProductById(item.ProductId);
             if (product is not null)
@@ -56,30 +41,47 @@ public class BasketServiceApp(IDistributedCache cache, CatalogApiClient catalogA
                 item.ProductName = product.Name;
                 item.Price = product.Price;
             }
-            else
-            {
-                item.ProductName = "toRemove";
-            }
-        });
+        }
 
-        await Task.WhenAll(tasks);
+        //refact
+        //var tasks = basket.Items.Select(async item =>
+        //{
+        //    var product = await catalogApiClient.GetProductById(item.ProductId);
+        //    if (product != null)
+        //    {
+        //        item.Price = product.Price;
+        //        item.ProductName = product.Name;
+        //    }
+        //}).ToList();
 
-        basket.Items.RemoveAll(i => i.ProductName == "toRemove");
+        //await Task.WhenAll(tasks);
 
-        var cacheKey = $"basket:{basket.UserName}";
+        /*
 
-        var options = new DistributedCacheEntryOptions
+         get in batch
+        var products = await catalogApiClient.GetProductsByIds(productIds);
+
+        foreach (var item in basket.Items)
         {
-            AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-        };
-        byte[] basketBytes = JsonSerializer.SerializeToUtf8Bytes(basket);
-        await cache.SetAsync(cacheKey, basketBytes, options);
+            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
+            if (product != null)
+            {
+                item.Price = product.Price;
+                item.ProductName = product.Name;
+            }
+        }
+
+        await cache.SetStringAsync(basket.UserName, JsonSerializer.Serialize(basket));
+
+         */
+
+        var jsonData = JsonSerializer.SerializeToUtf8Bytes(basket);
+        await cache.SetAsync(basket.UserName, jsonData);
     }
 
     public async Task CheckoutBasket(BasketCheckout basketCheckout)
     {
-        var cacheKey = $"basket:{basketCheckout.UserName}";
-        var shoppingCart = await GetBasket(cacheKey);
+        var shoppingCart = await GetBasket(basketCheckout.UserName);
         if (shoppingCart is null)
         {
             throw new InvalidOperationException($"Shopping cart for user '{basketCheckout.UserName}' not found.");
@@ -88,24 +90,20 @@ public class BasketServiceApp(IDistributedCache cache, CatalogApiClient catalogA
         // Set total price on basket checkout event message
         basketCheckout.TotalPrice = shoppingCart.TotalPrice;
 
-        var desconto = await discountGrpc.GetDiscountAsync(1);
-
-        basketCheckout.TotalPrice -= Math.Round(desconto.Amount * 100, 2);
-
-        var checkoutEvent = new AppShared.Events.BasketCheckoutEvent
+        // Send basket checkout event to rabbitmq using masstransit
+        var integrationEvent = new BasketCheckoutEvent
         {
-            BasketId = cacheKey,
             UserName = basketCheckout.UserName,
-            TotalPrice = basketCheckout.TotalPrice,
+            TotalPrice = shoppingCart.TotalPrice,
             FirstName = basketCheckout.FirstName,
             LastName = basketCheckout.LastName,
             EmailAddress = basketCheckout.EmailAddress,
             AddressLine = basketCheckout.AddressLine
         };
+        // Publish checkout basket event and create order
+        await bus.Publish(integrationEvent);
 
-        await bus.Publish(checkoutEvent);
-
-        // delete the basket
+        // Delete the basket
         await DeleteBasket(basketCheckout.UserName);
     }
 
@@ -116,29 +114,14 @@ public class BasketServiceApp(IDistributedCache cache, CatalogApiClient catalogA
 
     public async Task DeleteItemInBasket(string userName, int productId)
     {
-        var cacheKey = $"basket:{userName}";
+        var basket = await GetBasket("swn");
 
-        var basket = await GetBasket(userName);
+        if (basket == null) return;
 
-        if (basket is null) return;
-
-        int removedCount = basket.Items.RemoveAll(i => i.ProductId == productId);
-
-        if (removedCount == 0) return;
-
-        if (basket.Items.Count > 0)
+        var item = basket!.Items.FirstOrDefault(x => x.ProductId == productId);
+        if (item != null)
         {
-            var options = new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
-            };
-
-            byte[] basketBytes = JsonSerializer.SerializeToUtf8Bytes(basket);
-            await cache.SetAsync(cacheKey, basketBytes, options);
-        }
-        else
-        {
-            await cache.RemoveAsync(cacheKey);
+            await cache.SetStringAsync(basket.UserName, JsonSerializer.Serialize(basket));
         }
     }
 }

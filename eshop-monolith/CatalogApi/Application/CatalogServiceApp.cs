@@ -10,6 +10,8 @@ public interface ICatalogServiceApp
 {
     Task<IReadOnlyCollection<Product>> GetAllAsync(CancellationToken cancellationToken = default);
 
+    Task<Product?> GetById(int id, CancellationToken cancellationToken = default);
+
     Task CreateAsync(Product product, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(Product productInput, CancellationToken cancellationToken = default);
@@ -47,6 +49,11 @@ public class CatalogServiceApp(CatalogDbContext catalogDbContext, IBus bus) : IC
            .AsNoTracking()
            .OrderBy(p => p.Name)
            .ToListAsync(ct);
+    }
+
+    public async Task<Product?> GetById(int id, CancellationToken cancellationToken = default)
+    {
+        return await _catalogContext.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
     }
 
     public async Task UpdateAsync(Product productInput, CancellationToken cancellationToken = default)

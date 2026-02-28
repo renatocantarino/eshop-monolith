@@ -18,7 +18,6 @@ builder.AddRedisDistributedCache(connectionName: "cache");
 
 builder.Services.AddGrpcClient<DiscountService.DiscountServiceClient>(opt => opt.Address = new Uri("https://localhost:9987"));
 
-// 2. DEPOIS: Registre os seus serviços que dependem do gRPC
 builder.Services.AddScoped<DiscountGrpcService>();
 builder.Services.AddScoped<IBasketServiceApp, BasketServiceApp>();
 
@@ -49,8 +48,6 @@ builder.Services.Scan(scan => scan
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
-
-// Configure the HTTP request pipeline.
 
 app.UseHttpsRedirection();
 

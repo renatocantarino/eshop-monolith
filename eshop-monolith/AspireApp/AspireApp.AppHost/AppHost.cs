@@ -3,6 +3,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 // Backing Services
 var postgres = builder
         .AddPostgres("postgres")
+        .WithImageTag("18.3-alpine3.23")
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
@@ -11,19 +12,19 @@ var orderDb = postgres.AddDatabase("OrderDB");
 
 var cache = builder
         .AddRedis("cache")
-        .WithRedisInsight()
+        //.WithRedisInsight()
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
 var mongo = builder
         .AddMongoDB("mongodb")
-        .WithMongoExpress()
+        //.WithMongoExpress()
         .WithDataVolume()
         .WithLifetime(ContainerLifetime.Persistent);
 
 var mongodb = mongo.AddDatabase("DiscountDB");
 
-var rabbitMQ = builder
+var rabbitmq = builder
         .AddRabbitMQ("rabbitmq")
         .WithManagementPlugin()
         .WithDataVolume()
@@ -39,27 +40,29 @@ var discountApi = builder.AddProject<Projects.Discount_Grpc>("discount-grpc")
 
 var catalog = builder.AddProject<Projects.CatalogApi>("catalog")
                         .WithReference(catalogDB)
-                        .WithReference(rabbitMQ)
+                        .WithReference(rabbitmq)
                         .WaitFor(catalogDB)
-                        .WaitFor(rabbitMQ);
+                        .WaitFor(rabbitmq);
 
 var ordering = builder
                     .AddProject<Projects.OrderingApi>("ordering")
                     .WithReference(orderDb)
-                    .WithReference(rabbitMQ)
+                    .WithReference(rabbitmq)
                     .WaitFor(orderDb)
-                    .WaitFor(rabbitMQ);
+                    .WaitFor(rabbitmq);
 
 var basket = builder
                     .AddProject<Projects.BasketApi>("basket")
                     .WithReference(cache)
-                    .WithReference(rabbitMQ)
-                    .WithReference(discountApi) // Permite que o Basket encontre a URL do gRPC
+                    .WithReference(rabbitmq)
+                    .WithReference(discountApi)
+                    .WithReference(catalog)
                     .WaitFor(cache)
                     .WaitFor(discountApi)
-                    .WaitFor(rabbitMQ);
+                    .WaitFor(rabbitmq)
+                    .WaitFor(catalog);
 
-var gateway = builder.AddProject<Projects.YarpGateway>("yarpgateway")
+var gateway = builder.AddProject<Projects.YarpGateway>("yarpapigateway")
                         .WithReference(catalog)
                         .WithReference(basket)
                         .WithReference(ordering)
