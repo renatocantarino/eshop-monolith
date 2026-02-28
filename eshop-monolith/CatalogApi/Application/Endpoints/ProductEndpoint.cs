@@ -19,6 +19,10 @@ public static class ProductEndpoint
         group.MapGet("/{id}", GetByIdRoute)
                .Produces<ProductResponse>(StatusCodes.Status200OK)
                .Produces(StatusCodes.Status404NotFound);
+
+        group.MapPost("/by-ids", GetByIdsRoute)
+               .WithName("GetProductsByIds")
+               .Produces<List<ProductResponse>>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetByIdRoute(int id, IMediator raptor, CancellationToken ct)
@@ -41,6 +45,21 @@ public static class ProductEndpoint
         try
         {
             var query = new GetAllQuery();
+            var result = await raptor.ExecuteQueryAsync(query, ct);
+
+            return Results.Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> GetByIdsRoute(List<int> ids, IMediator raptor, CancellationToken ct)
+    {
+        try
+        {
+            var query = new GetByIdsQuery(ids);
             var result = await raptor.ExecuteQueryAsync(query, ct);
 
             return Results.Ok(result);

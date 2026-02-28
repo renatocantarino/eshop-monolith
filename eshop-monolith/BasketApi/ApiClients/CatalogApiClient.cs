@@ -27,4 +27,28 @@ public class CatalogApiClient(HttpClient httpClient, ILogger<CatalogApiClient> l
             throw;
         }
     }
+
+    public async Task<IReadOnlyCollection<ProductResponse>> GetProductsByIds(IEnumerable<int> ids)
+    {
+        var idList = ids.ToList();
+        logger.LogInformation("GetProductsByIds: {count} products", idList.Count);
+
+        try
+        {
+            var response = await httpClient.PostAsJsonAsync("/products/by-ids", idList);
+            response.EnsureSuccessStatusCode();
+            var products = await response.Content.ReadFromJsonAsync<List<ProductResponse>>();
+            return products ?? [];
+        }
+        catch (HttpRequestException ex)
+        {
+            logger.LogError(ex, "Erro de rede ao tentar contactar a API de products (batch).");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erro inesperado ao processar batch de products.");
+            throw;
+        }
+    }
 }

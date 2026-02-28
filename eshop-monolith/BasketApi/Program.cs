@@ -29,6 +29,11 @@ builder.Services.AddHttpClient<CatalogApiClient>(client =>
         options.Retry.MaxRetryAttempts = 3;
         options.Retry.Delay = TimeSpan.FromSeconds(2);
         options.Retry.BackoffType = Polly.DelayBackoffType.Exponential;
+
+        options.CircuitBreaker.FailureRatio = 0.5;
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(30);
+        options.CircuitBreaker.MinimumThroughput = 10;
+        options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
     });
 
 // Add CQRS Mediator

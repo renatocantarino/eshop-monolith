@@ -22,6 +22,7 @@ builder.Services.AddMassTransitConfig(Assembly.GetExecutingAssembly());
 
 builder.Services.AddScoped<IQueryHandler<GetAllQuery, IReadOnlyCollection<ProductResponse>>, GetAllQueryHandler>();
 builder.Services.AddScoped<IQueryHandler<GetByIdQuery, ProductResponse>, GetByIdQueryHandler>();
+builder.Services.AddScoped<IQueryHandler<GetByIdsQuery, IReadOnlyCollection<ProductResponse>>, GetByIdsQueryHandler>();
 
 var app = builder.Build();
 

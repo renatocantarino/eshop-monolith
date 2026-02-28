@@ -32,48 +32,19 @@ public class BasketServiceApp(IDistributedCache cache, CatalogApiClient catalogA
 
     public async Task UpdateBasket(ShoppingCart basket)
     {
-        //N+1 problem
-        foreach (var item in basket.Items)
-        {
-            var product = await catalogApiClient.GetProductById(item.ProductId);
-            if (product is not null)
-            {
-                item.ProductName = product.Name;
-                item.Price = product.Price;
-            }
-        }
-
-        //refact
-        //var tasks = basket.Items.Select(async item =>
-        //{
-        //    var product = await catalogApiClient.GetProductById(item.ProductId);
-        //    if (product != null)
-        //    {
-        //        item.Price = product.Price;
-        //        item.ProductName = product.Name;
-        //    }
-        //}).ToList();
-
-        //await Task.WhenAll(tasks);
-
-        /*
-
-         get in batch
+        // Batch fetch: single HTTP call instead of N+1
+        var productIds = basket.Items.Select(i => i.ProductId).Distinct();
         var products = await catalogApiClient.GetProductsByIds(productIds);
+        var productLookup = products.ToDictionary(p => p.Id);
 
         foreach (var item in basket.Items)
         {
-            var product = products.FirstOrDefault(p => p.Id == item.ProductId);
-            if (product != null)
+            if (productLookup.TryGetValue(item.ProductId, out var product))
             {
-                item.Price = product.Price;
                 item.ProductName = product.Name;
+                item.Price = product.Price;
             }
         }
-
-        await cache.SetStringAsync(basket.UserName, JsonSerializer.Serialize(basket));
-
-         */
 
         var jsonData = JsonSerializer.SerializeToUtf8Bytes(basket);
         await cache.SetAsync(basket.UserName, jsonData);
